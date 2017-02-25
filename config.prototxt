@@ -1,0 +1,56 @@
+# This is the configuration file of the program
+# basic simulation setting
+reset_period: 10
+sim_period: 1000000
+
+# trace file
+trace_file: "trace"
+
+# Path to the neural network prototxt definition file
+## AlexNet
+#model_file: "models/alexnet/deploy.prototxt"
+
+## CaffeNet
+#model_file: "models/caffenet/deploy.prototxt"
+
+## VGGNet-16
+#model_file: "models/vggnet/VGG_ILSVRC_16_layers_deploy.prototxt"
+
+## GoogLeNet-v1
+#model_file: "models/googlenet-v1/deploy.prototxt"
+
+## Inception-v4
+#model_file: "models/inception-v4/deploy.prototxt"
+#model_file: "models/inception-v4/inception_v4_stem.prototxt"
+
+## ResNet-152
+#model_file: "models/resnet/ResNet-152-deploy.prototxt"
+
+## ResNet-v2
+#model_file: "models/resnet-v2/deploy.prototxt"
+
+# toy design
+model_file: "models/toy_design/toy1.prototxt"
+#model_file: "models/toy_design/toy1_1.prototxt"
+#model_file: "models/toy_design/toy2.prototxt"
+#model_file: "models/toy_design/toy3.prototxt"
+#model_file: "models/toy_design/toy4.prototxt"
+
+## technology node (default to 28nm)
+tech_node: 28
+
+## bit width
+bit_width: 8
+
+## muliplier pipeline flag (default to false)
+#mult_pipeline: false
+
+## memory type: ROM or RAM
+memory_type: ROM
+
+# append buffer capacity
+append_buffer_capacity: 100
+
+# target pixel inference rate
+pixel_inference_rate: 100
+
