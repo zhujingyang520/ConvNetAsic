@@ -33,19 +33,25 @@ class AddArray : public sc_module {
   public:
     // constructor
     explicit AddArray(sc_module_name module_name, int Kh, int Kw, int Pin,
-        int Pout);
+        int Pout, int bit_width=8, int tech_node=28);
     // destructor
     ~AddArray();
 
-    // main process of the add array
+    // main process of the adder array
     void AddArrayProc();
 
-    // area model of adder array
-    double Area(int bit_width, int tech_node=28) const;
+    // area model of the adder array
+    double Area() const;
+    // power model of the adder array
+    double StaticPower() const;
+    double DynamicPower() const;
+    double TotalPower() const;
 
   private:
     int Kh_, Kw_;     // spatial dimension of kernel
     int Pin_, Pout_;  // input parallelism & output parallelism
+    AdderModel* adder_model_;
+    double dynamic_energy_;
 };
 
 #endif

@@ -38,8 +38,6 @@ class Testbench : public sc_module {
       input_layer_data = new sc_out<Payload> [Nin];
       output_layer_data = new sc_in<Payload> [Nout];
 
-      start_of_frame_ = end_of_frame_ = sc_time(0, SC_NS);
-
       SC_CTHREAD(InputLayerProc, clock.pos());
       reset_signal_is(reset, true);
 
@@ -63,9 +61,14 @@ class Testbench : public sc_module {
     // injection time for each pixel
     std::vector<sc_time> inject_time_;
 
+    // data record for early stop
     // time slot for start of 2nd frame & end of 2nd frame
     sc_time start_of_frame_;
     sc_time end_of_frame_;
+    // data @ start frame
+    int start_frame_data_;
+    // flag for received output data
+    bool received_output_;
 };
 
 #endif

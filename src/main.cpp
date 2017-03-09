@@ -58,13 +58,23 @@ int sc_main (int argc, char **argv) {
   top.ReportStatistics();
 
   // report the area
-  const config::ConfigParameter& config_param = cmd_parser.config_param;
+  top.ReportAreaBreakdown();
+  cout << "####################################################" << endl;
+  cout << "Total Area: " << top.Area() << endl;
+  cout << "####################################################" << endl;
 
-  top.ReportAreaBreakdown(config_param.bit_width(), config_param.tech_node(),
-      config_param.memory_type());
+  // report the power
+  top.ReportPowerBreakdown();
+  cout << "####################################################" << endl;
+  cout << "# Power report [uW]" << endl;
+  cout << "####################################################" << endl;
+  cout << "Total Static Power: " << top.StaticPower() << endl;
+  cout << "Total Dynamic Power: " << top.DynamicPower() << endl;
+  cout << "Total Power: " << top.TotalPower() << endl;
+  cout << "####################################################" << endl;
 
-  cout << "Total Area: " << top.Area(config_param.bit_width(),
-      config_param.tech_node(), config_param.memory_type()) << endl;
+  // report the memory distribution
+  //top.ReportMemoryDistribution();
 
   // close the trace file
   if (tf) {

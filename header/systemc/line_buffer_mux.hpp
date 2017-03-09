@@ -11,6 +11,7 @@
 #define __LINE_BUFFER_MUX_HPP__
 
 #include "header/systemc/data_type.hpp"
+#include "header/systemc/models/mux_model.hpp"
 #include <systemc.h>
 
 class LineBufferMux : public sc_module {
@@ -33,17 +34,28 @@ class LineBufferMux : public sc_module {
   public:
     // constructor
     explicit LineBufferMux(sc_module_name module_name, int Kh, int Kw, int Nin,
-        int Pin);
+        int Pin, int bit_width=8, int tech_node=28);
     // destructor
     ~LineBufferMux();
 
     // main process of the line buffer mux
     void LineBufferMuxProc();
 
+    // area model of the line buffer mux
+    double Area() const;
+    // power model of the line buffer mux
+    double StaticPower() const;
+    double DynamicPower() const;
+    double TotalPower() const;
+
   private:
     int Kh_, Kw_;   // spatial dimension of the kernel
     int Nin_;       // no. input feature map
     int Pin_;       // input parallelism
+
+    // mux model
+    MuxModel* mux_model_;
+    double dynamic_energy_;
 };
 
 #endif

@@ -15,7 +15,7 @@ using namespace std;
  */
 PoolLayerPe::PoolLayerPe(sc_module_name module_name, int Kh, int Kw, int h,
     int w, int Nin, int Pin, int Pad_h, int Pad_w, int Stride_h, int Stride_w,
-    PoolArray::PoolMethod pool_method)
+    PoolArray::PoolMethod pool_method, int bit_width, int tech_node)
   : sc_module(module_name), Nin_(Nin), Pin_(Pin) {
   // pooling layer: same input & output channel depth / parallelism
   const int Nout = Nin;
@@ -52,23 +52,23 @@ PoolLayerPe::PoolLayerPe(sc_module_name module_name, int Kh, int Kw, int h,
   pool_layer_ctrl_->demux_out_reg_enable(demux_out_reg_enable_);
   pool_layer_ctrl_->demux_select(demux_select_);
 
-  // initialize Nin line buffers
-  line_buffer_ = new LineBuffer* [Nin];
+  // initialize the line buffer arrays
+  line_buffer_array_ = new LineBufferArray("line_buffer_array", Kh, Kw,
+      h+2*Pad_h, w+2*Pad_w, Nin, bit_width, tech_node);
+  line_buffer_array_->clock(clock);
+  line_buffer_array_->reset(reset);
+  line_buffer_array_->input_data_valid(line_buffer_valid_);
   for (int i = 0; i < Nin; ++i) {
-    sprintf(name, "line_buffer_%d", i);
-    line_buffer_[i] = new LineBuffer(name, Kh, Kw, h+2*Pad_h, w+2*Pad_w);
-    line_buffer_[i]->clock(clock);
-    line_buffer_[i]->reset(reset);
-    line_buffer_[i]->input_data(line_buffer_in_data_[i]);
-    line_buffer_[i]->input_data_valid(line_buffer_valid_);
-    for (int k = 0; k < Kh*Kw; ++k) {
-      line_buffer_[i]->output_data[k](line_buffer_out_data_[i*Kh*Kw+k]);
-    }
+    line_buffer_array_->input_data[i](line_buffer_in_data_[i]);
+  }
+  for (int i = 0; i < Nin*Kh*Kw; ++i) {
+    line_buffer_array_->output_data[i](line_buffer_out_data_[i]);
   }
 
   // initialize the line buffer mux
   sprintf(name, "%s", "line_buffer_mux");
-  line_buffer_mux_ = new LineBufferMux(name, Kh, Kw, Nin, Pin);
+  line_buffer_mux_ = new LineBufferMux(name, Kh, Kw, Nin, Pin, bit_width,
+      tech_node);
   line_buffer_mux_->clock(clock);
   line_buffer_mux_->reset(reset);
   line_buffer_mux_->mux_en(line_buffer_mux_en_);
@@ -82,7 +82,8 @@ PoolLayerPe::PoolLayerPe(sc_module_name module_name, int Kh, int Kw, int h,
 
   // initialize the pooling array (max/avg)
   sprintf(name, "%s", "pool_array");
-  pool_array_ = new PoolArray(name, Kh, Kw, Pin, pool_method);
+  pool_array_ = new PoolArray(name, Kh, Kw, Pin, pool_method, bit_width,
+      tech_node);
   pool_array_->clock(clock);
   pool_array_->reset(reset);
   pool_array_->pool_array_en(pool_array_en_);
@@ -98,7 +99,7 @@ PoolLayerPe::PoolLayerPe(sc_module_name module_name, int Kh, int Kw, int h,
 
   // initialize the demux output register
   sprintf(name, "%s", "demux_out_reg");
-  demux_out_reg_ = new DemuxOutReg(name, Nout, Pout);
+  demux_out_reg_ = new DemuxOutReg(name, Nout, Pout, bit_width, tech_node);
   demux_out_reg_->clock(clock);
   demux_out_reg_->reset(reset);
   demux_out_reg_->demux_out_reg_clear(demux_out_reg_clear_);
@@ -139,10 +140,7 @@ PoolLayerPe::~PoolLayerPe() {
   delete [] pool_array_out_data_;
 
   delete pool_layer_ctrl_;
-  for (int i = 0; i < Nin_; ++i) {
-    delete line_buffer_[i];
-  }
-  delete [] line_buffer_;
+  delete line_buffer_array_;
   delete line_buffer_mux_;
   delete pool_array_;
   delete demux_out_reg_;
@@ -153,22 +151,41 @@ PoolLayerPe::~PoolLayerPe() {
  * ---------------------------
  * Accumulate all the components within the pool layer.
  */
-double PoolLayerPe::Area(int bit_width, int tech_node) const {
+double PoolLayerPe::Area() const {
   double total_area = 0.;
-  // line buffer area: distribute implementation (overhead)
-//  for (int i = 0; i < Nin_; ++i) {
-//    total_area += line_buffer_[i]->Area(bit_width, tech_node);
-//  }
   // line buffer area: centralized implementation
-  int line_buffer_memory_size = 0;
-  for (int i = 0; i < Nin_; ++i) {
-    line_buffer_memory_size += line_buffer_[i]->MemorySize();
-  }
-  MemoryModel line_buffer_memory_model(line_buffer_memory_size*bit_width/1024.,
-      tech_node, config::ConfigParameter_MemoryType_RAM);
-  total_area += line_buffer_memory_model.Area();
-
+  // where the width is concatenation over all channels
+  total_area += line_buffer_array_->Area();
+  // line buffer mux area
+  total_area += line_buffer_mux_->Area();
   // pool array
-  total_area += pool_array_->Area(bit_width, tech_node);
+  total_area += pool_array_->Area();
+  // demux reg
+  total_area += demux_out_reg_->Area();
+
   return total_area;
+}
+
+double PoolLayerPe::StaticPower() const {
+  double total_power = 0.;
+  // accumulate the static power of all components
+  total_power += line_buffer_array_->StaticPower();
+  total_power += line_buffer_mux_->StaticPower();
+  total_power += pool_array_->StaticPower();
+  total_power += demux_out_reg_->StaticPower();
+  return total_power;
+}
+
+double PoolLayerPe::DynamicPower() const {
+  double total_power = 0.;
+  // accumulate the dynamic power of all components
+  total_power += line_buffer_array_->DynamicPower();
+  total_power += line_buffer_mux_->DynamicPower();
+  total_power += pool_array_->DynamicPower();
+  total_power += demux_out_reg_->DynamicPower();
+  return total_power;
+}
+
+double PoolLayerPe::TotalPower() const {
+  return StaticPower() + DynamicPower();
 }

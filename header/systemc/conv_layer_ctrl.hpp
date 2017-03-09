@@ -54,7 +54,8 @@ class ConvLayerCtrl : public sc_module {
     // constructor
     explicit ConvLayerCtrl(sc_module_name module_name, int Kh, int Kw, int h,
         int w, int Nin, int Nout, int Pin, int Pout, int Pad_h=0,
-        int Pad_w=0, int Stride_h=1, int Stride_w=1);
+        int Pad_w=0, int Stride_h=1, int Stride_w=1,
+        int extra_pipeline_stage=0);
     // destructor
     ~ConvLayerCtrl();
 
@@ -63,6 +64,7 @@ class ConvLayerCtrl : public sc_module {
     void MultArrayCtrlProc();   // mult array control process
     void AddArrayCtrlProc();    // add array control process
     void DemuxOutRegCtrlProc(); // demux output register control process
+    void LineBufferValid();     // combination logic for line buffer valid
 
   private:
     int Kh_, Kw_;               // kernel spatial dimension
@@ -74,6 +76,9 @@ class ConvLayerCtrl : public sc_module {
 
     // internal pipeline stage variables
     static const int PIPELINE_STAGE = 4;
+    // extra pipeline stage in CONV PE (model the fact that MULT, ADD may take
+    // multiple clock cycles)
+    int extra_pipeline_stage_;
     // flag for start pipeline
     bool pipeline_flags_[PIPELINE_STAGE];
     int line_buffer_mux_select_;

@@ -42,13 +42,22 @@ class Top : public sc_module {
 
     inline void ReportStatistics() const { testbench->ReportStatistics(); }
 
-    inline double Area(int bit_width, int tech_node,
-        config::ConfigParameter_MemoryType weight_memory_type) const {
-      return convnet_acc->Area(bit_width, tech_node, weight_memory_type);
+    inline double Area() const {
+      return convnet_acc->Area();
+    }
+    inline double StaticPower() const {
+      return convnet_acc->StaticPower();
+    }
+    inline double DynamicPower() const {
+      return convnet_acc->DynamicPower();
+    }
+    inline double TotalPower() const {
+      return convnet_acc->TotalPower();
     }
 
-    void ReportAreaBreakdown(int bit_width, int tech_node,
-        config::ConfigParameter_MemoryType weight_memory_type) const;
+    void ReportAreaBreakdown() const;
+    void ReportPowerBreakdown() const;
+    void ReportMemoryDistribution() const;
 };
 
 #endif

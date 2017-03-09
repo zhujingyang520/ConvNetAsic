@@ -13,6 +13,8 @@ void Testbench::InputLayerProc() {
   for (int i = 0; i < Nin_; ++i) {
     input_layer_data[i].write(Payload(0));
   }
+  start_of_frame_ = end_of_frame_ = sc_time(0, SC_NS);
+  start_frame_data_ = 0;
   // synthetic data for ConvNetAcc
   int data = 0;
   wait();
@@ -23,13 +25,16 @@ void Testbench::InputLayerProc() {
     for (int i = 0; i < Nin_; ++i) {
       input_layer_data[i].write(Payload(data));
     }
+    // record the packet injection time
     inject_time_.push_back(sc_time_stamp());
-    if (data == input_spatial_dim_ + 1) {
+    if (received_output_ && start_of_frame_ == sc_time(0, SC_NS)) {
       start_of_frame_ = sc_time_stamp();
-    } else if (data == 2*input_spatial_dim_) {
-      // early stop: run for a complete 2nd frame, which is enough for deriving
-      // the throughput and the buffer status
-      cout << "Early stop: already sent 2 frames of the input." << endl;
+      start_frame_data_ = data;
+    }
+    // early stop
+    if (received_output_ && data == (1+start_frame_data_+input_spatial_dim_)) {
+      cout << "Early stop. Sent a complete frame after pipeline stage is fully"
+        " warmed up!" << endl;
       end_of_frame_ = sc_time_stamp();
       sc_stop();
     }
@@ -42,15 +47,15 @@ void Testbench::InputLayerProc() {
     // output info for tracking status
     cout << "@" << sc_time_stamp() << " Testbench sends data " << data << endl;
 
-    // wait for 1 CC
+    // not require to wait for 1 CC
     input_layer_valid.write(0);
-    wait();
   }
 }
 
 void Testbench::OutputLayerProc() {
   // reset behavior
   output_layer_rdy.write(0);
+  received_output_ = false;
   wait();
 
   while (true) {
@@ -61,14 +66,14 @@ void Testbench::OutputLayerProc() {
 
     // output info
     cout << "@" << sc_time_stamp() << " Testbench receives output layer: ";
+    received_output_ = true;
     for (int i = 0; i < Nout_; ++i) {
       cout << output_layer_data[i].read().data << " ";
     }
     cout << endl;
 
-    // wait for 1 CC
+    // does not matter whether we require to wait for 1 CC
     output_layer_rdy.write(0);
-    wait();
   }
 }
 
@@ -94,7 +99,7 @@ void Testbench::ReportStatistics() const {
   // Avg interval: throughput
   sc_time avg_interval;
   if (start_of_frame_.to_double() != 0 && end_of_frame_.to_double() != 0) {
-    avg_interval = (end_of_frame_ - start_of_frame_) / (input_spatial_dim_ - 1);
+    avg_interval = (end_of_frame_ - start_of_frame_) / (input_spatial_dim_-1);
   } else {
     avg_interval = (inject_time_.back() - inject_time_.front()) /
       (inject_time_.size() - 1);

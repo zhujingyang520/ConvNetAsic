@@ -40,18 +40,32 @@ class ChannelBuffer : public sc_module {
     }
 
     // area model of the channel buffer
-    double Area(int bit_width, int tech_node=28) const;
+    double Area() const;
+    // power model of the channel buffer
+    double StaticPower() const;
+    double DynamicPower() const;
+    double TotalPower() const;
+    // getters of the memory configurations
+    inline int MemoryWidth() const { return memory_model_->memory_width(); }
+    // the depth of the memory model is initially set as the max capacity of the
+    // channel buffer. The actual depth is determined during the run-time
+    inline int MemoryDepth() const { return max_buffer_size_; }
 
   private:
     int Nin_;                 // input channel depth
     int capacity_;            // max channel buffer capacity
     std::queue<Payload>* buffer_;
     int max_buffer_size_;     // max buffer size in the simulation
+    // memory hardware model
+    MemoryModel* memory_model_;
+    // we split the read and write energy of the memory
+    double dynamic_write_energy_;
+    double dynamic_read_energy_;
 
   public:
     // constructor
     explicit ChannelBuffer(sc_module_name module_name, int Nin,
-        int capacity=INT_MAX);
+        int capacity=INT_MAX, int bit_width=8, int tech_node=28);
     // destructor
     ~ChannelBuffer();
 

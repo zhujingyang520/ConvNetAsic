@@ -17,6 +17,11 @@ ConvNetAcc::ConvNetAcc(sc_module_name module_name, const Net& net,
   : sc_module(module_name), tf_(tf) {
   // obtain required variables from the configure parameter
   append_buffer_capacity_ = config_param.append_buffer_capacity();
+  // obtain the hardware related settings
+  bit_width_ = config_param.bit_width();
+  tech_node_ = config_param.tech_node();
+  memory_type_ = config_param.memory_type();
+
   // initialize the parallelism
   InitParallelism(net, config_param.pixel_inference_rate());
 
@@ -173,6 +178,7 @@ pair<int, int> ConvNetAcc::CalculateParallelsim(int Nin, int Nout, int h, int w,
     if (pixel_inference_rate <= 0) {
       pixel_inference_rate = 1;
     }
+    /*
     double k = sqrt(1. / static_cast<double>(pixel_inference_rate));
     int Pin = round(k * Nin);
     int Pout = round(k * Nout);
@@ -181,8 +187,34 @@ pair<int, int> ConvNetAcc::CalculateParallelsim(int Nin, int Nout, int h, int w,
     if (Pin > Nin) Pin = Nin;
     if (Pout <= 0) Pout = 1;
     if (Pout > Nout) Pout = Nout;
-    return make_pair(Pin, Pout);
+    return make_pair(Pin, Pout);*/
+    return CalculateParallelsimBruteForce(Nin, Nout, pixel_inference_rate);
   }
+}
+
+/*
+ * Implementation notes: CalculateParallelsimBruteForce
+ * -----------------------------------------------------
+ * Search for the tuple (Pin, Pout) so that the expected rate is as close as the
+ * target one. The expected rate is calculated as follows:
+ *
+ *  ceil(Nin/Pin) * ceil(Nout/Pout) = rate
+ */
+pair<int, int> ConvNetAcc::CalculateParallelsimBruteForce(int Nin, int Nout,
+    int rate) const {
+  int Pin = 1, Pout = 1, min = INT_MAX;
+  for (int Pin_ = 1; Pin_ <= Nin; ++Pin_) {
+    for (int Pout_ = 1; Pout_ <= Nout; ++Pout_) {
+      int calculated_rate = ceil(static_cast<double>(Nin) / Pin_) *
+        ceil(static_cast<double>(Nout) / Pout_);
+      if (abs(calculated_rate - rate) < min) {
+        min = abs(calculated_rate - rate);
+        Pin = Pin_;
+        Pout = Pout_;
+      }
+    }
+  }
+  return make_pair(Pin, Pout);
 }
 
 /*
@@ -335,7 +367,8 @@ void ConvNetAcc::InitPoolingPe(const Net& net, int layer_id) {
 
   // allocate the new PoolLayerPe
   PoolLayerPe* pool_layer_pe = new PoolLayerPe(module_name, Kh, Kw, h, w, Nin,
-      Pin, Pad_h, Pad_w, Stride_h, Stride_w, pool_method);
+      Pin, Pad_h, Pad_w, Stride_h, Stride_w, pool_method, bit_width_,
+      tech_node_);
   pool_layer_pe_.push_back(pool_layer_pe);
   // make the connections
   pool_layer_pe->clock(clock);
@@ -454,7 +487,8 @@ void ConvNetAcc::InitInnerProductLayer(const Net& net, int layer_id) {
 
   // allocate the new ConvLayerPe
   ConvLayerPe* fc_layer_pe = new ConvLayerPe(module_name, Kh, Kw, h, w, Nin,
-      Nout, Pin, Pout, Pad_h, Pad_w, Stride_h, Stride_w);
+      Nout, Pin, Pout, Pad_h, Pad_w, Stride_h, Stride_w, memory_type_,
+      bit_width_, tech_node_);
   conv_layer_pe_.push_back(fc_layer_pe);
   // make the connections
   fc_layer_pe->clock(clock);
@@ -619,7 +653,8 @@ void ConvNetAcc::AppendChannelBuffer(const Net& net, int layer_id, int blob_id,
   // obtain the input channel depth
   const int Nin = net.top_blobs_shape_ptr_[layer_id][blob_id]->at(1);
   // allocate the channel buffer
-  ChannelBuffer *channel_buffer = new ChannelBuffer(module_name, Nin, capacity);
+  ChannelBuffer *channel_buffer = new ChannelBuffer(module_name, Nin, capacity,
+      bit_width_, tech_node_);
   channel_buffer_.push_back(channel_buffer);
   // make the connections
   channel_buffer->clock(clock);
@@ -684,7 +719,8 @@ void ConvNetAcc::PrependChannelBuffer(const Net& net, int layer_id, int blob_id,
   // obtain the input channel depth
   const int Nin = net.bottom_blobs_shape_ptr_[layer_id][blob_id]->at(1);
   // allocate the channel buffer
-  ChannelBuffer *channel_buffer = new ChannelBuffer(module_name, Nin, capacity);
+  ChannelBuffer *channel_buffer = new ChannelBuffer(module_name, Nin, capacity,
+      bit_width_, tech_node_);
   channel_buffer_.push_back(channel_buffer);
   // make the connections
   channel_buffer->clock(clock);
@@ -837,7 +873,8 @@ void ConvNetAcc::InitConvolutionPe(const Net& net, int layer_id) {
 
   // allocate the new ConvLayerPe
   ConvLayerPe* conv_layer_pe = new ConvLayerPe(module_name, Kh, Kw, h, w, Nin,
-      Nout, Pin, Pout, Pad_h, Pad_w, Stride_h, Stride_w);
+      Nout, Pin, Pout, Pad_h, Pad_w, Stride_h, Stride_w, memory_type_,
+      bit_width_, tech_node_);
   conv_layer_pe_.push_back(conv_layer_pe);
   // make the connections
   conv_layer_pe->clock(clock);
@@ -921,18 +958,17 @@ void ConvNetAcc::InitConvolutionPe(const Net& net, int layer_id) {
  * ---------------------------
  * Accumulate all the modules within the current accelerator.
  */
-double ConvNetAcc::Area(int bit_width, int tech_node,
-    ConfigParameter_MemoryType weight_memory_type) const {
+double ConvNetAcc::Area() const {
   double total_area = 0.;
   // convolutional pe area
   for (vector<ConvLayerPe *>::const_iterator iter = conv_layer_pe_.begin();
       iter != conv_layer_pe_.end(); ++iter) {
-    total_area += (*iter)->Area(bit_width, tech_node, weight_memory_type);
+    total_area += (*iter)->Area();
   }
   // pooling pe area
   for (vector<PoolLayerPe *>::const_iterator iter = pool_layer_pe_.begin();
       iter != pool_layer_pe_.end(); ++iter) {
-    total_area += (*iter)->Area(bit_width, tech_node);
+    total_area += (*iter)->Area();
   }
   // no area model for the split pe & concat pe
   // can be added here
@@ -940,10 +976,65 @@ double ConvNetAcc::Area(int bit_width, int tech_node,
   // channel buffer area
   for (vector<ChannelBuffer *>::const_iterator iter = channel_buffer_.begin();
       iter != channel_buffer_.end(); ++iter) {
-    total_area += (*iter)->Area(bit_width, tech_node);
+    total_area += (*iter)->Area();
   }
 
   return total_area;
+}
+
+/*
+ * Implementation notes: power
+ * ----------------------------
+ * Accumulate the power model of all components in the accelerator.
+ */
+double ConvNetAcc::StaticPower() const {
+  double total_power = 0.;
+  // convolutional pe static power
+  for (vector<ConvLayerPe *>::const_iterator iter = conv_layer_pe_.begin();
+      iter != conv_layer_pe_.end(); ++iter) {
+    total_power += (*iter)->StaticPower();
+  }
+  // pooling pe static power
+  for (vector<PoolLayerPe *>::const_iterator iter = pool_layer_pe_.begin();
+      iter != pool_layer_pe_.end(); ++iter) {
+    total_power += (*iter)->StaticPower();
+  }
+  // no power model for the split pe & concat pe
+
+  // channel buffer static power
+  for (vector<ChannelBuffer *>::const_iterator iter = channel_buffer_.begin();
+      iter != channel_buffer_.end(); ++iter) {
+    total_power += (*iter)->StaticPower();
+  }
+
+  return total_power;
+}
+
+double ConvNetAcc::DynamicPower() const {
+  double total_power = 0.;
+  // convolutional pe dynamic power
+  for (vector<ConvLayerPe *>::const_iterator iter = conv_layer_pe_.begin();
+      iter != conv_layer_pe_.end(); ++iter) {
+    total_power += (*iter)->DynamicPower();
+  }
+  // pooling pe dynamic power
+  for (vector<PoolLayerPe *>::const_iterator iter = pool_layer_pe_.begin();
+      iter != pool_layer_pe_.end(); ++iter) {
+    total_power += (*iter)->DynamicPower();
+  }
+  // no power model for the split pe & concat pe
+
+  // channel buffer dynamic power
+  for (vector<ChannelBuffer *>::const_iterator iter = channel_buffer_.begin();
+      iter != channel_buffer_.end(); ++iter) {
+    total_power += (*iter)->DynamicPower();
+  }
+
+  return total_power;
+}
+
+double ConvNetAcc::TotalPower() const {
+  return StaticPower() + DynamicPower();
 }
 
 /*

@@ -27,7 +27,7 @@
 
 #include "header/systemc/data_type.hpp"
 #include "header/systemc/conv_layer_ctrl.hpp"
-#include "header/systemc/line_buffer.hpp"
+#include "header/systemc/line_buffer_array.hpp"
 #include "header/systemc/line_buffer_mux.hpp"
 #include "header/systemc/weight_mem.hpp"
 #include "header/systemc/mult_array.hpp"
@@ -54,13 +54,15 @@ class ConvLayerPe : public sc_module {
 
     SC_HAS_PROCESS(ConvLayerPe);
 
-    double Area(int bit_width, int tech_node,
-        config::ConfigParameter_MemoryType weight_memory_type) const;
+    double Area() const;
+    double StaticPower() const;
+    double DynamicPower() const;
+    double TotalPower() const;
 
   private:
     // internal modules
     ConvLayerCtrl* conv_layer_ctrl_;
-    LineBuffer** line_buffer_;
+    LineBufferArray* line_buffer_array_;
     LineBufferMux* line_buffer_mux_;
     WeightMem* weight_mem_;
     MultArray* mult_array_;
@@ -101,7 +103,10 @@ class ConvLayerPe : public sc_module {
     // constructor
     explicit ConvLayerPe(sc_module_name module_name, int Kh, int Kw, int h,
         int w, int Nin, int Nout, int Pin, int Pout, int Pad_h=0,
-        int Pad_w=0, int Stride_h=1, int Stride_w=1);
+        int Pad_w=0, int Stride_h=1, int Stride_w=1,
+        config::ConfigParameter_MemoryType memory_type=
+        config::ConfigParameter_MemoryType_ROM, int bit_width=8,
+        int tech_node=28);
     // destructor
     ~ConvLayerPe();
 

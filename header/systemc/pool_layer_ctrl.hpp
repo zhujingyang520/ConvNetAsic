@@ -47,7 +47,7 @@ class PoolLayerCtrl : public sc_module {
     // constructor
     explicit PoolLayerCtrl(sc_module_name module_name, int Kh, int Kw, int h,
         int w, int Nin, int Pin, int Pad_h=0, int Pad_w=0,
-        int Stride_h=1, int Stride_w=1);
+        int Stride_h=1, int Stride_w=1, int extra_pipeline_stage=0);
     // destructor
     ~PoolLayerCtrl();
 
@@ -55,6 +55,7 @@ class PoolLayerCtrl : public sc_module {
     void PoolLayerCtrlProc();   // main control process
     void PoolArrayCtrlProc();   // pool array control process
     void DemuxOutRegCtrlProc(); // demux output register control process
+    void LineBufferValid();     // combination logic for line buffer valid
 
   private:
     int Kh_, Kw_;               // kernel spatial dimension
@@ -66,6 +67,9 @@ class PoolLayerCtrl : public sc_module {
 
     // internal pipeline stage variables
     static const int PIPELINE_STAGE = 3;
+    // extra pipeline stage in POOL PE (model the fact that ADD, MUX may take
+    // multiple clock cycles)
+    int extra_pipeline_stage_;
     // flag for each pipeline stage
     bool pipeline_flags_[PIPELINE_STAGE];
 

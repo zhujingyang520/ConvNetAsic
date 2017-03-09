@@ -7,7 +7,8 @@
 #include "header/systemc/channel_buffer.hpp"
 using namespace std;
 
-ChannelBuffer::ChannelBuffer(sc_module_name module_name, int Nin, int capacity)
+ChannelBuffer::ChannelBuffer(sc_module_name module_name, int Nin, int capacity,
+    int bit_width, int tech_node)
   : sc_module(module_name), Nin_(Nin), capacity_(capacity) {
   // allocate the port width
   prev_layer_data = new sc_in<Payload> [Nin];
@@ -31,14 +32,26 @@ ChannelBuffer::ChannelBuffer(sc_module_name module_name, int Nin, int capacity)
     }
   }
 
-  SC_METHOD(ChannelBufferMonitor);
-  sensitive << clock.pos();
+  // we will use the capacity as the memory depth
+  // when we report the power consumption, we will scale the dynamic energy to
+  // the actual buffer depth (i.e. max_buffer_size_)
+  const int memory_width = Nin * bit_width;
+  const int memory_depth = capacity;
+  memory_model_ = new MemoryModel(memory_width, memory_depth, tech_node,
+      config::ConfigParameter_MemoryType_RAM);
+  // initialize the dynamic energy
+  dynamic_write_energy_ = 0.;
+  dynamic_read_energy_ = 0.;
+
+  //SC_METHOD(ChannelBufferMonitor);
+  //sensitive << clock.pos();
 }
 
 ChannelBuffer::~ChannelBuffer() {
   delete [] prev_layer_data;
   delete [] next_layer_data;
   delete [] buffer_;
+  delete memory_model_;
 }
 
 /*
@@ -60,6 +73,13 @@ void ChannelBuffer::ChannelBufferRX() {
       do {
         wait();
       } while (!prev_layer_valid.read());
+      // if there is no no element in the fifo and the next stage is ready to
+      // receive, we will not push the element in the FIFO and bypass the data
+      // to the output of the channel
+      if (BufferSize() == 0 && next_layer_rdy.read()) {
+        continue;
+      }
+
       // push the data into channel buffer
       prev_layer_rdy.write(0);
       for (int i = 0; i < Nin_; ++i) {
@@ -69,9 +89,8 @@ void ChannelBuffer::ChannelBufferRX() {
       if (max_buffer_size_ < BufferSize()) {
         max_buffer_size_ = BufferSize();
       }
-      // we can eliminate the wait cycle. we add here for the consistency with
-      // ConvLayerPe
-      wait();
+      // increments memory energy
+      dynamic_write_energy_ += memory_model_->DynamicEnergyOfWriteOperation();
     } else {
       // the buffer is full, wait for drained
       prev_layer_rdy.write(0);
@@ -99,6 +118,8 @@ void ChannelBuffer::ChannelBufferTX() {
       for (int i = 0; i < Nin_; ++i) {
         next_layer_data[i].write(buffer_[i].front());
       }
+      // increments the dynamic energy
+      dynamic_read_energy_ += memory_model_->DynamicEnergyOfReadOperation();
       do {
         wait();
       } while (!next_layer_rdy.read());
@@ -107,19 +128,21 @@ void ChannelBuffer::ChannelBufferTX() {
       for (int i = 0; i < Nin_; ++i) {
         buffer_[i].pop();
       }
-
-      // similarly, the following part can be eliminate. We keep it here for the
-      // consistency
+      // deassert the valid
       next_layer_valid.write(0);
-      //for (int i = 0; i < Nin_; ++i) {
-      //  next_layer_data[i].write(Payload(0));
-      //}
-      wait();
     } else {
-      // empty buffer: no data to be transmitted
-      next_layer_valid.write(0);
-      for (int i = 0; i < Nin_; ++i) {
-        next_layer_data[i].write(Payload(0));
+      // bypass the data from the input to the output
+      if (prev_layer_valid.read() && next_layer_rdy.read()) {
+        next_layer_valid.write(1);
+        for (int i = 0; i < Nin_; ++i) {
+          next_layer_data[i].write(prev_layer_data[i].read());
+        }
+      } else {
+        // empty buffer: no data to be transmitted
+        next_layer_valid.write(0);
+        for (int i = 0; i < Nin_; ++i) {
+          next_layer_data[i].write(Payload(0));
+        }
       }
       wait();
     }
@@ -153,17 +176,67 @@ void ChannelBuffer::ChannelBufferMonitor() {
  * during simulation and the final area is determined by the maximum buffer
  * size.
  */
-double ChannelBuffer::Area(int bit_width, int tech_node) const {
-  // memory size: Nin channel buffer, and each of them stores max_buffer_size_
-  // activations in the feature map
-  // the addtional max_buffer_size_-1 due to we insert the channel buffer at each
-  // split in the inception module, and we can save 1 activations in each split
-  if (capacity_ <= 0 || max_buffer_size_ == 0) {
+double ChannelBuffer::Area() const {
+  // update the memory depth
+  const int memory_width = memory_model_->memory_width();
+  const int memory_depth = max_buffer_size_;
+  const int tech_node = memory_model_->tech_node();
+  // use the updated memory depth
+  MemoryModel updated_memory_model(memory_width, memory_depth, tech_node,
+      config::ConfigParameter_MemoryType_RAM);
+  return updated_memory_model.Area();
+}
+
+/*
+ * Implementation notes: Power
+ * ----------------------------
+ * Power is divied into the static power and dynamic power. The static power is
+ * a constant for a fixed channel buffer. The dynamic power depends on the
+ * running of the system.
+ */
+double ChannelBuffer::StaticPower() const {
+  // update the memory depth
+  const int memory_width = memory_model_->memory_width();
+  const int memory_depth = max_buffer_size_;
+  const int tech_node = memory_model_->tech_node();
+  // use the updated memory depth
+  MemoryModel updated_memory_model(memory_width, memory_depth, tech_node,
+      config::ConfigParameter_MemoryType_RAM);
+  return updated_memory_model.StaticPower();
+}
+
+/*
+ * Implementation notes: DynamicPower
+ * -----------------------------------
+ * We use the buffer depth of capacity_ as the memory model for dynamic memory
+ * energy. We will scale the result back to the actual buffer depth.
+ */
+double ChannelBuffer::DynamicPower() const {
+  sc_time clock_period = dynamic_cast<const sc_clock*>(clock.get_interface())->
+    period();
+  sc_time sim_time = sc_time_stamp();
+  int total_cycles = sim_time / clock_period;
+  // updated memory depth
+  const int memory_width = memory_model_->memory_width();
+  const int memory_depth = max_buffer_size_;
+  const int tech_node = memory_model_->tech_node();
+  if (memory_depth == 0 || memory_width == 0) {
     return 0.;
   }
-  const int memory_size = Nin_*(max_buffer_size_)*bit_width;
-  // channel buffer is SRAM-based
-  MemoryModel memory_model(memory_size/1024., tech_node,
+  MemoryModel updated_memory_model(memory_width, memory_depth, tech_node,
       config::ConfigParameter_MemoryType_RAM);
-  return memory_model.Area();
+  double read_energy_ratio = (memory_model_->DynamicEnergyOfReadOperation() > 0)
+    ? (updated_memory_model.DynamicEnergyOfReadOperation() /
+     memory_model_->DynamicEnergyOfReadOperation()) : 0;
+  double write_energy_ratio = (memory_model_->DynamicEnergyOfWriteOperation()
+      > 0) ? (updated_memory_model.DynamicEnergyOfWriteOperation() /
+        memory_model_->DynamicEnergyOfWriteOperation()) : 0;
+  // scale the energy to the correcy ammount
+  const double dynamic_energy_ = dynamic_write_energy_ * write_energy_ratio +
+    dynamic_read_energy_ * read_energy_ratio;
+  return dynamic_energy_ / total_cycles;
+}
+
+double ChannelBuffer::TotalPower() const {
+  return StaticPower() + DynamicPower();
 }

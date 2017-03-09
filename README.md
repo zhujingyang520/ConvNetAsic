@@ -3,9 +3,9 @@ This is an on-going project to develop the ASIC generator for a specific neural
 network architecture provided by the Caffe Prototxt file.
 
 ## Installation
-The dependency for the current project includes the SystemC
-[http://accellera.org/downloads/standards/systemc] and the Google Protocol
-Buffers [https://developers.google.com/protocol-buffers/].
+The dependency for the current project includes the [SystemC]
+(http://accellera.org/downloads/standards/systemc) and the [Google Protocol
+Buffers] (https://developers.google.com/protocol-buffers/).
 
 The Makfile is provided for GCC compilation on Linux. The variable $SYSTEMC_ROOT
 shoud be changed accordingly based on the installation location of SystemC on
@@ -20,9 +20,11 @@ the system, e.g. bit width, CNN prototxt file, etc. A sampled configuration is
 provided in the main directory, named "config.prototxt".
 
 The program can be invoked by typing the following command in the console:
->> ./main -c config.prototxt
+```sh
+$ ./main -c config.prototxt
+```
 
-During execution, the system will first analyze the Caffe network and do the
+During execution, the system will first analyzes the Caffe network and does the
 basic analysis on the operation complexity on each layer. The ASIC system will
 be generated based on a naive algorithm (should be improved later). A thorough
 cycle accurate simulation will be conducted to obtain the performance metric. By
@@ -31,8 +33,8 @@ etc. It can support for a wide range of neural network architectures including
 inception-v4 except ResNet.
 
 A trace file (\*.vcd)  with the specified name will be generated during the
-simulation, which can be viewed through common waveform viewer, such as Modelsim
-and VCS.
+simulation, which can be viewed through common waveform viewers, such as
+Modelsim and VCS.
 
 At the end of simulation, a detailed throughput and area breakdown the generated
 system will be exported.

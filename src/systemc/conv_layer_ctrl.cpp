@@ -9,7 +9,7 @@ using namespace std;
 
 ConvLayerCtrl::ConvLayerCtrl(sc_module_name module_name, int Kh, int Kw, int h,
     int w, int Nin, int Nout, int Pin, int Pout, int Pad_h, int Pad_w,
-    int Stride_h, int Stride_w)
+    int Stride_h, int Stride_w, int extra_pipeline_stage)
   : sc_module(module_name) {
   // assign the parameters to the instance variables
   Kh_ = Kh;
@@ -24,6 +24,7 @@ ConvLayerCtrl::ConvLayerCtrl(sc_module_name module_name, int Kh, int Kw, int h,
   Pad_w_ = Pad_w;
   Stride_h_ = Stride_h;
   Stride_w_ = Stride_w;
+  extra_pipeline_stage_ = extra_pipeline_stage;
 
   // allocate the ports
   mult_array_in_valid = new sc_out<bool> [Pout_*Pin_];
@@ -41,6 +42,9 @@ ConvLayerCtrl::ConvLayerCtrl(sc_module_name module_name, int Kh, int Kw, int h,
 
   SC_METHOD(DemuxOutRegCtrlProc);
   sensitive << clock.pos() << reset;
+
+  SC_METHOD(LineBufferValid);
+  sensitive << prev_layer_rdy << prev_layer_valid << line_buffer_zero_in;
 }
 
 ConvLayerCtrl::~ConvLayerCtrl() {
@@ -48,12 +52,21 @@ ConvLayerCtrl::~ConvLayerCtrl() {
   delete [] add_array_in_valid;
 }
 
+void ConvLayerCtrl::LineBufferValid() {
+  if (line_buffer_zero_in) {
+    line_buffer_valid.write(1);
+  } else if (prev_layer_rdy.read()) {
+    line_buffer_valid.write(prev_layer_valid.read());
+  } else {
+    line_buffer_valid.write(0);
+  }
+}
+
 void ConvLayerCtrl::ConvLayerCtrlProc() {
   // reset behavior
   prev_layer_rdy.write(0);    // not ready for the reset
   next_layer_valid.write(0);  // invalid for the next layer (not compute yet)
   // invalid & disable for all the internal units
-  line_buffer_valid.write(0);
   line_buffer_zero_in.write(0);
   line_buffer_mux_en.write(0);
   line_buffer_mux_select.write(0);
@@ -85,40 +98,32 @@ void ConvLayerCtrl::ConvLayerCtrlProc() {
 
     if (feat_pixel_counter < Pad_h_*(w_+2*Pad_w_)) {
       // padding leading zeros: first Pad_h full 0 rows
-      line_buffer_valid.write(1);
       line_buffer_zero_in.write(1);
       ++feat_pixel_counter;
       wait();
-      line_buffer_valid.write(0);
       line_buffer_zero_in.write(0);
     }
     else if (feat_pixel_counter % (w_+2*Pad_w_) >= 0 &&
         feat_pixel_counter % (w_+2*Pad_w_) < Pad_w_) {
       // padding leading zeros: first Pad_w 0s
-      line_buffer_valid.write(1);
       line_buffer_zero_in.write(1);
       ++feat_pixel_counter;
       wait();
-      line_buffer_valid.write(0);
       line_buffer_zero_in.write(0);
     }
     else if (feat_pixel_counter % (w_+2*Pad_w_) >= w_+Pad_w_) {
       // padding tailing zeros: last Pad_w 0s
-      line_buffer_valid.write(1);
       line_buffer_zero_in.write(1);
       ++feat_pixel_counter;
       wait();
-      line_buffer_valid.write(0);
       line_buffer_zero_in.write(0);
     }
     else if (feat_pixel_counter >= (w_+2*Pad_w_)*(h_+Pad_h_) &&
         feat_pixel_counter < feat_pixels) {
       // padding tailing zeros: last Pad_h rows 0s
-      line_buffer_valid.write(1);
       line_buffer_zero_in.write(1);
       ++feat_pixel_counter;
       wait();
-      line_buffer_valid.write(0);
       line_buffer_zero_in.write(0);
     }
     else {
@@ -130,10 +135,7 @@ void ConvLayerCtrl::ConvLayerCtrlProc() {
 
       // deassert the ready, indicate it is busy right now
       prev_layer_rdy.write(0);
-      line_buffer_valid.write(1);
       ++feat_pixel_counter;
-      wait();
-      line_buffer_valid.write(0);
     }
 
     // warm up the line buffer at first
@@ -183,7 +185,7 @@ void ConvLayerCtrl::ConvLayerCtrlProc() {
     weight_mem_rd_addr.write(0);
 
     int drain_pipeline_ = 0;
-    while ((++drain_pipeline_) < PIPELINE_STAGE) {
+    while ((++drain_pipeline_) < (PIPELINE_STAGE+extra_pipeline_stage_)) {
       wait();
     }
 

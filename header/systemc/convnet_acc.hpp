@@ -64,6 +64,10 @@ class ConvNetAcc : public sc_module {
     int output_blob_idx_; // output connection blob index
     int append_buffer_capacity_;
     int input_spatial_dim_; // input spatial dimension
+    int bit_width_;       // bit width of each number
+    int tech_node_;       // technology node
+    // weight (kernel) memory type
+    config::ConfigParameter_MemoryType memory_type_;
 
   public:
     // constructor
@@ -79,8 +83,11 @@ class ConvNetAcc : public sc_module {
     void OutputLayerConnections();
 
     // area model of the accelerator
-    double Area(int bit_width, int tech_node,
-        config::ConfigParameter_MemoryType weight_memory_type) const;
+    double Area() const;
+    // power model of the accelerator
+    double StaticPower() const;
+    double DynamicPower() const;
+    double TotalPower() const;
 
     void InitParallelism(const Net& net, int pixel_inference_rate);
   private:
@@ -89,6 +96,9 @@ class ConvNetAcc : public sc_module {
     // helper function to set the parallelism input & parallelism output
     std::pair<int, int> CalculateParallelsim(int Nin, int Nout, int h, int w,
         int layer_inference_rate) const;
+    // brute force search of the parallelism of the CONV
+    std::pair<int, int> CalculateParallelsimBruteForce(int Nin, int Nout,
+        int rate) const;
 
   private:
     // initialize the modules & interconnections based on the ConvNet

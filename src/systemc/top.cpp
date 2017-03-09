@@ -53,93 +53,205 @@ Top::~Top() {
   delete convnet_acc;
 }
 
-void Top::ReportAreaBreakdown(int bit_width, int tech_node,
-    config::ConfigParameter_MemoryType weight_memory_type) const {
+void Top::ReportAreaBreakdown() const {
   cout << "###################################" << endl;
   cout << "# ConvNetAsic Area Breakdown [um2]" << endl;
   cout << "###################################" << endl;
   double mult_area = 0;
   double line_buffer_area = 0;
+  double line_buffer_mux_area = 0;
   double adder_area = 0;
   double weight_mem_area = 0;
   double pool_array_area = 0;
+  double demux_area = 0;
+  double channel_buffer_area = 0;
   // convolutional layer pe
   for (size_t i = 0; i < convnet_acc->conv_layer_pe_.size(); ++i) {
     const ConvLayerPe* conv_layer_pe = convnet_acc->conv_layer_pe_[i];
     // hierarchy of convolution layer pe
-    // distribute line buffer implementation (overhead)
-//    double line_buffer_area = 0.;
-//    for (int j = 0; j < conv_layer_pe->Nin_; ++j) {
-//      line_buffer_area += conv_layer_pe->line_buffer_[j]->Area(bit_width,
-//          tech_node);
-//    }
     // centralized line buffer implementation
-    int line_buffer_memory_size = 0;
-    for (int j = 0; j < conv_layer_pe->Nin_; ++j) {
-      line_buffer_memory_size += conv_layer_pe->line_buffer_[j]->MemorySize();
-    }
-    MemoryModel line_buffer_memory_model(line_buffer_memory_size*bit_width/1024.,
-        tech_node, config::ConfigParameter_MemoryType_RAM);
-    line_buffer_area += line_buffer_memory_model.Area();
-    weight_mem_area += conv_layer_pe->weight_mem_->Area(bit_width, tech_node,
-        weight_memory_type);
-    mult_area += conv_layer_pe->mult_array_->Area(bit_width, tech_node);
-    adder_area += conv_layer_pe->add_array_->Area(bit_width, tech_node);
+    // where the width is concatenation over all channels
+    line_buffer_area += conv_layer_pe->line_buffer_array_->Area();
+    line_buffer_mux_area += conv_layer_pe->line_buffer_mux_->Area();
+    weight_mem_area += conv_layer_pe->weight_mem_->Area();
+    mult_area += conv_layer_pe->mult_array_->Area();
+    adder_area += conv_layer_pe->add_array_->Area();
+    demux_area += conv_layer_pe->demux_out_reg_->Area();
 
     // LOG info
-    cout << conv_layer_pe->basename() << ": " << conv_layer_pe->Area(bit_width,
-        tech_node, weight_memory_type) << endl;
-    cout << "\tLine Buffer: " << line_buffer_memory_model.Area() << endl;
-    cout << "\tWeight Mem: " << conv_layer_pe->weight_mem_->Area(bit_width,
-        tech_node, weight_memory_type) << endl;
-    cout << "\tMultipier Array: " << conv_layer_pe->mult_array_->Area(bit_width,
-        tech_node) << endl;
-    cout << "\tAdder Array: " << conv_layer_pe->add_array_->Area(bit_width,
-        tech_node) << endl;
+    cout << conv_layer_pe->basename() << ": " << conv_layer_pe->Area() << endl;
+    cout << "\tLine Buffer: " << conv_layer_pe->line_buffer_array_->Area()
+      << endl;
+    cout << "\tLine Buffer Mux: " << conv_layer_pe->line_buffer_mux_->Area()
+      << endl;
+    cout << "\tWeight Mem: " << conv_layer_pe->weight_mem_->Area() << endl;
+    cout << "\tMultipier Array: " << conv_layer_pe->mult_array_->Area()
+      << endl;
+    cout << "\tAdder Array: " << conv_layer_pe->add_array_->Area() << endl;
+    cout << "\tDemux: " << conv_layer_pe->demux_out_reg_->Area() << endl;
   }
 
   // pooling layer pe
   for (size_t i = 0; i < convnet_acc->pool_layer_pe_.size(); ++i) {
     const PoolLayerPe* pool_layer_pe = convnet_acc->pool_layer_pe_[i];
-    // hierarchy of pooling layer pe
-    // distributed line buffer implementation
-//    double line_buffer_area = 0.;
-//    for (int j = 0; j < pool_layer_pe->Nin_; ++j) {
-//      line_buffer_area += pool_layer_pe->line_buffer_[j]->Area(bit_width,
-//          tech_node);
-//    }
     // centralized line buffer implementation
-    int line_buffer_memory_size = 0;
-    for (int j = 0; j < pool_layer_pe->Nin_; ++j) {
-      line_buffer_memory_size += pool_layer_pe->line_buffer_[j]->MemorySize();
-    }
-    MemoryModel line_buffer_memory_model(line_buffer_memory_size*bit_width/1024.,
-        tech_node, config::ConfigParameter_MemoryType_RAM);
-    line_buffer_area += line_buffer_memory_model.Area();
-    pool_array_area += pool_layer_pe->pool_array_->Area(bit_width, tech_node);
+    // where the width is concatenation over all channels
+    line_buffer_area += pool_layer_pe->line_buffer_array_->Area();
+    // line buffer mux
+    line_buffer_mux_area += pool_layer_pe->line_buffer_mux_->Area();
+    // pool array area
+    pool_array_area += pool_layer_pe->pool_array_->Area();
+    // demux area
+    demux_area += pool_layer_pe->demux_out_reg_->Area();
 
     // LOG info
-    cout << pool_layer_pe->basename() << ": " << pool_layer_pe->Area(bit_width,
-        tech_node) << endl;
-    cout << "\tLine Buffer: " << line_buffer_memory_model.Area() << endl;
-    cout << "\tPool Array: " << pool_layer_pe->pool_array_->Area(bit_width,
-        tech_node) << endl;
+    cout << pool_layer_pe->basename() << ": " << pool_layer_pe->Area() << endl;
+    cout << "\tLine Buffer: " << pool_layer_pe->line_buffer_array_->Area()
+      << endl;
+    cout << "\tLine Buffer Mux: " << pool_layer_pe->line_buffer_mux_->Area()
+      << endl;
+    cout << "\tPool Array: " << pool_layer_pe->pool_array_->Area() << endl;
+    cout << "\tDemux: " << pool_layer_pe->demux_out_reg_->Area() << endl;
   }
 
   // channel buffer
   for (size_t i = 0; i < convnet_acc->channel_buffer_.size(); ++i) {
     const ChannelBuffer* channel_buffer = convnet_acc->channel_buffer_[i];
+    channel_buffer_area += channel_buffer->Area();
     cout << channel_buffer->basename() << " with max buffer depth: "
       << channel_buffer->MaxBufferSize() << " of area "
-      << channel_buffer->Area(bit_width, tech_node) << endl;
+      << channel_buffer->Area() << endl;
   }
 
   // LOG info
   cout << "###############################" << endl;
   cout << "Mult area: " << mult_area << endl;
   cout << "Line buffer area: " << line_buffer_area << endl;
+  cout << "Line buffer mux area: " << line_buffer_mux_area << endl;
   cout << "Adder area:" << adder_area << endl;
   cout << "Weight memory area: " << weight_mem_area << endl;
   cout << "Pool array area: " << pool_array_area << endl;
+  cout << "Demux area: " << demux_area << endl;
+  cout << "Channel buffer area: " << channel_buffer_area << endl;
   cout << "###############################" << endl;
+}
+
+void Top::ReportPowerBreakdown() const {
+  cout << "###################################" << endl;
+  cout << "# ConvNetAsic Power Breakdown [uW]" << endl;
+  cout << "# Static Power [S], Dynamic Power [D], Total Power [T]" << endl;
+  cout << "###################################" << endl;
+  // convolutional layer pe
+  for (size_t i = 0; i < convnet_acc->conv_layer_pe_.size(); ++i) {
+    const ConvLayerPe* conv_layer_pe = convnet_acc->conv_layer_pe_[i];
+    // hierarchy of convolution layer pe
+
+    // LOG info
+    cout << conv_layer_pe->basename() << ": " << conv_layer_pe->TotalPower()
+      << endl;
+    cout << "\tLine Buffer: [S]: " << conv_layer_pe->line_buffer_array_->
+      StaticPower() << " [D]: " << conv_layer_pe->line_buffer_array_->
+      DynamicPower() << " [T]: " << conv_layer_pe->line_buffer_array_->
+      TotalPower()<< endl;
+    cout << "\tLine Buffer Mux: [S]: " << conv_layer_pe->line_buffer_mux_->
+      StaticPower() << " [D]: " << conv_layer_pe->line_buffer_mux_->
+      DynamicPower() << " [T]: " << conv_layer_pe->line_buffer_mux_->
+      TotalPower() << endl;
+    cout << "\tWeight Mem: [S]: " << conv_layer_pe->weight_mem_->StaticPower()
+     << " [D]: " << conv_layer_pe->weight_mem_->DynamicPower()
+     << " [T]: " << conv_layer_pe->weight_mem_->TotalPower() << endl;
+    cout << "\tMultipier Array: [S]: " << conv_layer_pe->mult_array_->
+      StaticPower() << " [D]: " << conv_layer_pe->mult_array_->DynamicPower()
+      << " [T]: " << conv_layer_pe->mult_array_->TotalPower() << endl;
+    cout << "\tAdder Array: [S]: " << conv_layer_pe->add_array_->StaticPower()
+     << " [D]: " << conv_layer_pe->add_array_->DynamicPower()
+     << " [T]: " << conv_layer_pe->add_array_->TotalPower() << endl;
+    cout << "\tDemux: [S]: " << conv_layer_pe->demux_out_reg_->StaticPower()
+      << " [D]: " << conv_layer_pe->demux_out_reg_->DynamicPower()
+      << " [T]: " << conv_layer_pe->demux_out_reg_->TotalPower() << endl;
+  }
+
+  // pooling layer pe
+  for (size_t i = 0; i < convnet_acc->pool_layer_pe_.size(); ++i) {
+    const PoolLayerPe* pool_layer_pe = convnet_acc->pool_layer_pe_[i];
+
+    // LOG info
+    cout << pool_layer_pe->basename() << ": " << pool_layer_pe->TotalPower()
+      << endl;
+    cout << "\tLine Buffer: [S]: " << pool_layer_pe->line_buffer_array_->
+      StaticPower() << " [D]: " << pool_layer_pe->line_buffer_array_->
+      DynamicPower() << " [T]: " << pool_layer_pe->line_buffer_array_->
+      TotalPower() << endl;
+    cout << "\tLine Buffer Mux: [S]: " << pool_layer_pe->line_buffer_mux_->
+      StaticPower() << " [D]: " << pool_layer_pe->line_buffer_mux_->
+      DynamicPower() << " [T]: " << pool_layer_pe->line_buffer_mux_->
+      TotalPower() << endl;
+    cout << "\tPool Array: [S]: " << pool_layer_pe->pool_array_->StaticPower()
+      << " [D]: " << pool_layer_pe->pool_array_->DynamicPower()
+      << " [T]: " << pool_layer_pe->pool_array_->TotalPower() << endl;
+    cout << "\tDemux: [S]: " << pool_layer_pe->demux_out_reg_->StaticPower()
+      << " [D]: " << pool_layer_pe->demux_out_reg_->DynamicPower()
+      << " [T]: " << pool_layer_pe->demux_out_reg_->TotalPower() << endl;
+  }
+
+  // channel buffer
+  for (size_t i = 0; i < convnet_acc->channel_buffer_.size(); ++i) {
+    const ChannelBuffer* channel_buffer = convnet_acc->channel_buffer_[i];
+    cout << channel_buffer->basename() << " with max buffer depth: "
+      << channel_buffer->MaxBufferSize() << " [S]: "
+      << channel_buffer-> StaticPower() << " [D]: "
+      << channel_buffer->DynamicPower() << " [T]: "
+      << channel_buffer->TotalPower() << endl;
+  }
+  cout << "###############################" << endl;
+}
+
+/*
+ * Implementation notes: ReportMemoryDistribution
+ * -----------------------------------------------
+ * Report the memory distribution in the ConvNet ASIC accelerator.
+ */
+void Top::ReportMemoryDistribution() const {
+  cout << "###################################" << endl;
+  cout << "# Memory distribution in ConvNetAcc" << endl;
+  cout << "# Depth [no.] x Width [bits]" << endl;
+  cout << "###################################" << endl;
+  // convolutional layer pe
+  cout << "#########################" << endl;
+  cout << "# Convolutional layer PE" << endl;
+  cout << "#########################" << endl;
+  for (size_t i = 0; i < convnet_acc->conv_layer_pe_.size(); ++i) {
+    const ConvLayerPe* conv_layer_pe = convnet_acc->conv_layer_pe_[i];
+    cout << "#" << conv_layer_pe->basename() << endl;
+    cout << "\t" << "line buffer: " << conv_layer_pe->line_buffer_array_->
+      MemoryDepth() << "x" << conv_layer_pe->line_buffer_array_->MemoryWidth()
+      << endl;
+    cout << "\t" << "weight memory: " << conv_layer_pe->weight_mem_->
+      MemoryDepth() << "x" << conv_layer_pe->weight_mem_->MemoryWidth() << endl;
+  }
+
+  // pooling layer pe
+  cout << "#########################" << endl;
+  cout << "# Pooling layer PE" << endl;
+  cout << "#########################" << endl;
+  for (size_t i = 0; i < convnet_acc->pool_layer_pe_.size(); ++i) {
+    const PoolLayerPe* pool_layer_pe = convnet_acc->pool_layer_pe_[i];
+    cout << "#" << pool_layer_pe->basename() << endl;
+    cout << "\t" << "line buffer: " << pool_layer_pe->line_buffer_array_->
+      MemoryDepth() << "x" << pool_layer_pe->line_buffer_array_->MemoryWidth()
+      << endl;
+  }
+
+  // channel buffer
+  cout << "#########################" << endl;
+  cout << "# Channel buffer" << endl;
+  cout << "#########################" << endl;
+  for (size_t i = 0; i < convnet_acc->channel_buffer_.size(); ++i) {
+    const ChannelBuffer* channel_buffer = convnet_acc->channel_buffer_[i];
+    cout << "#" << channel_buffer->basename() << endl;
+    cout << "\t" << "line buffer: " << channel_buffer->MemoryDepth() << "x"
+      << channel_buffer->MemoryWidth() << endl;
+  }
+
+  cout << "###################################" << endl;
 }

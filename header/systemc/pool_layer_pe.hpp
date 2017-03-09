@@ -24,7 +24,7 @@
 
 #include "header/systemc/data_type.hpp"
 #include "header/systemc/pool_layer_ctrl.hpp"
-#include "header/systemc/line_buffer.hpp"
+#include "header/systemc/line_buffer_array.hpp"
 #include "header/systemc/line_buffer_mux.hpp"
 #include "header/systemc/pool_array.hpp"
 #include "header/systemc/demux_out_reg.hpp"
@@ -48,12 +48,15 @@ class PoolLayerPe : public sc_module {
 
     SC_HAS_PROCESS(PoolLayerPe);
 
-    double Area(int bit_width, int tech_node) const;
+    double Area() const;
+    double StaticPower() const;
+    double DynamicPower() const;
+    double TotalPower() const;
 
   private:
     // internal modules
     PoolLayerCtrl* pool_layer_ctrl_;
-    LineBuffer** line_buffer_;
+    LineBufferArray* line_buffer_array_;
     LineBufferMux* line_buffer_mux_;
     PoolArray* pool_array_;
     DemuxOutReg* demux_out_reg_;
@@ -82,7 +85,8 @@ class PoolLayerPe : public sc_module {
     // constructor
     explicit PoolLayerPe(sc_module_name module_name, int Kh, int Kw, int h,
         int w, int Nin, int Pin, int Pad_h=0, int Pad_w=0, int Stride_h=1,
-        int Stride_w=1, PoolArray::PoolMethod pool_method=PoolArray::MAX);
+        int Stride_w=1, PoolArray::PoolMethod pool_method=PoolArray::MAX,
+        int bit_width=8, int tech_node=28);
     // destructor
     ~PoolLayerPe();
 

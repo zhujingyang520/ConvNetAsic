@@ -31,19 +31,26 @@ class MultArray : public sc_module {
   public:
     // constructor
     explicit MultArray(sc_module_name module_name, int Kh, int Kw, int Pin,
-        int Pout);
+        int Pout, int bit_width=8, int tech_node=28);
     // destructor
     ~MultArray();
 
     // main process of the multiplier array
     void MultArrayProc();
 
-    // area of the multiplier array
-    double Area(int bit_width, int tech_node=28) const;
+    // area model of the multiplier array
+    double Area() const;
+    // power model of the multiplier array
+    double StaticPower() const;
+    double DynamicPower() const;
+    double TotalPower() const;
 
   private:
     int Kh_, Kw_;     // spatial dimension of kernel
     int Pin_, Pout_;  // input parallelism & output parallelism
+    // multipler model
+    MultModel* mult_model_;
+    double dynamic_energy_;
 };
 
 #endif

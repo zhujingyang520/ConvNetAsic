@@ -11,11 +11,32 @@
 using namespace std;
 using namespace config;
 
-MemoryModel::MemoryModel(double memory_size, int tech_node,
-    ConfigParameter_MemoryType memory_type) {
-  memory_size_ = memory_size;
-  tech_node_ = tech_node;
+MemoryModel::MemoryModel(int memory_width,  int memory_depth, int tech_node,
+    ConfigParameter_MemoryType memory_type) : Model(tech_node) {
+  memory_width_ = memory_width;
+  memory_depth_ = memory_depth;
   memory_type_ = memory_type;
+
+  // infer the memory size [bit]
+  memory_size_ = memory_width_ * memory_depth_;
+}
+
+/*
+ * Implementation notes: setters
+ * ------------------------------
+ * It can be used to re-configure the memory depth and memory width of the
+ * memory.
+ */
+void MemoryModel::SetMemoryWidth(int memory_width) {
+  memory_width_ = memory_width;
+  // update meomory size
+  memory_size_ = memory_width_ * memory_depth_;
+}
+
+void MemoryModel::SetMemoryDepth(int memory_depth) {
+  memory_depth_ = memory_depth;
+  // update meomory size
+  memory_size_ = memory_width_ * memory_depth_;
 }
 
 /*
@@ -29,11 +50,14 @@ double MemoryModel::Area() const {
     return 0;
   }
   if (tech_node_ == 28) {
+    double fitted_area;
     switch(memory_type_) {
       case ConfigParameter_MemoryType_ROM:
-        return 62. * memory_size_ + 1578.;
+        fitted_area = 0.378*memory_depth_ + 95.543*memory_width_ +
+          0.041*memory_size_;
+        return fitted_area > 0 ? fitted_area : 0;
       case ConfigParameter_MemoryType_RAM:
-        return 211. * memory_size_ + 3056.;
+        return 211. * memory_size_ / 1000. + 3056.;
       default:
         cerr << "undefined memory type: " << memory_type_ << endl;
         exit(1);
@@ -44,7 +68,93 @@ double MemoryModel::Area() const {
   }
 }
 
-// TODO: add the power value
-double MemoryModel::Power() const {
-  return 0.;
+/*
+ * Implementation notes: StaticPower
+ * ----------------------------------
+ * We use the memory model generated from the memory compiler.
+ */
+double MemoryModel::StaticPower() const {
+  if (memory_size_ <= 0) {
+    return 0.;
+  }
+
+  if (tech_node_ == 28) {
+    double fitted_power;
+    switch(memory_type_) {
+      case ConfigParameter_MemoryType_ROM:
+        fitted_power = 55.076 + 0.0456 * memory_depth_ + 1.198 * memory_width_;
+        return fitted_power > 0 ? fitted_power : 0;
+      case ConfigParameter_MemoryType_RAM:
+        // TODO
+        fitted_power = 0.001835 * memory_depth_ + 4.904 * memory_width_;
+        return fitted_power > 0 ? fitted_power : 0;
+      default:
+        cerr << "undefined memory type: " << memory_type_ << endl;
+        exit(1);
+    }
+  } else {
+    cerr << "undefined technology node: " << tech_node_ << endl;
+    exit(1);
+  }
+}
+
+/*
+ * Implementation notes: dynamic power
+ * ------------------------------------
+ * Dynamic power depends on the freqency: P = CV^2f. We should scale the power
+ * based on the clock frequency.
+ */
+double MemoryModel::DynamicEnergyOfReadOperation() const {
+  if (memory_size_ <= 0) {
+    return 0.;
+  }
+
+  if (tech_node_ == 28) {
+    double fitted_power;
+    switch(memory_type_) {
+      case ConfigParameter_MemoryType_ROM:
+        // dynamic power is evalauted under frequency of 0.5GHz
+        fitted_power = 65.82 + 0.042 * memory_depth_ + 85.22 * memory_width_;
+        fitted_power = fitted_power * 2 / clk_freq_;
+        return fitted_power > 0 ? fitted_power : 0;
+      case ConfigParameter_MemoryType_RAM:
+        // TODO
+        fitted_power = 0.1319 * memory_depth_ + 107.44 * memory_width_;
+        fitted_power = fitted_power * 2 / clk_freq_;
+        return fitted_power > 0 ? fitted_power : 0;
+      default:
+        cerr << "undefined memory type: " << memory_type_ << endl;
+        exit(1);
+    }
+  } else {
+    cerr << "undefined technology node: " << tech_node_ << endl;
+    exit(1);
+  }
+}
+
+double MemoryModel::DynamicEnergyOfWriteOperation() const {
+  if (memory_size_ <= 0) {
+    return 0.;
+  }
+
+  if (tech_node_ == 28) {
+    double fitted_power;
+    switch(memory_type_) {
+      case ConfigParameter_MemoryType_ROM:
+        // unexpected write to ROM
+        cerr << "write operation to ROM" << endl;
+        exit(1);
+      case ConfigParameter_MemoryType_RAM:
+        // TODO
+        fitted_power = 0.1185 * memory_depth_ + 120.47 * memory_width_;
+        fitted_power = fitted_power * 2 / clk_freq_;
+        return fitted_power > 0 ? fitted_power : 0;
+      default:
+        cerr << "undefined memory type: " << memory_type_ << endl;
+        exit(1);
+    }
+  } else {
+    cerr << "undefined technology node: " << tech_node_ << endl;
+    exit(1);
+  }
 }

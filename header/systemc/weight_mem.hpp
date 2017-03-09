@@ -27,14 +27,22 @@ class WeightMem : public sc_module {
 
     SC_HAS_PROCESS(WeightMem);
 
-    // area model of weight memory
-    double Area(int bit_width, int tech_node,
-        config::ConfigParameter_MemoryType memory_type) const;
+    // area model of the weight memory
+    double Area() const;
+    // power model of the weight memory
+    double StaticPower() const;
+    double DynamicPower() const;
+    double TotalPower() const;
+    // getters of the memory configuration
+    inline int MemoryWidth() const { return memory_model_->memory_width(); }
+    inline int MemoryDepth() const { return memory_model_->memory_depth(); }
 
   public:
     // constructor
     explicit WeightMem(sc_module_name module_name, int Kh, int Kw, int Pin,
-        int Pout, int Nin, int Nout);
+        int Pout, int Nin, int Nout, config::ConfigParameter_MemoryType
+        memory_type=config::ConfigParameter_MemoryType_ROM, int bit_width=8,
+        int tech_node=28);
     // destructor
     ~WeightMem();
 
@@ -50,6 +58,9 @@ class WeightMem : public sc_module {
 
     // real memory storage
     std::vector<Payload> mem_;
+    // memory model
+    MemoryModel* memory_model_;
+    double dynamic_energy_;
 };
 
 #endif

@@ -9,23 +9,25 @@
 #define __ADDER_MODEL_HPP__
 
 #include "proto/config.pb.h"
+#include "header/systemc/models/model.hpp"
 
-class AdderModel {
+class AdderModel : public Model {
   public:
     // constructor: provide the adder bit width, the technology node [nm]
     AdderModel(int bit_width, int tech_node=28);
-    ~AdderModel() {}
+    virtual ~AdderModel() {}
 
     // Area & Power Metric of the adder
     // Return the Area of adder [um2]
-    double Area() const;
-    double Power() const;
+    virtual double Area() const;
+    // Return the static power consumption of the adder
+    virtual double StaticPower() const;
+    // Dynamic energy of one operation
+    double DynamicEnergyOfOneOperation() const;
 
   private:
     // adder bit width
     int bit_width_;
-    // technology node
-    int tech_node_;
 };
 
 #endif

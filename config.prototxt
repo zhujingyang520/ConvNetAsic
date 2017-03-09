@@ -1,7 +1,7 @@
 # This is the configuration file of the program
 # basic simulation setting
 reset_period: 10
-sim_period: 1000000
+sim_period: 20000000
 
 # trace file
 trace_file: "trace"
@@ -30,11 +30,12 @@ trace_file: "trace"
 #model_file: "models/resnet-v2/deploy.prototxt"
 
 # toy design
-model_file: "models/toy_design/toy1.prototxt"
+#model_file: "models/toy_design/toy1.prototxt"
 #model_file: "models/toy_design/toy1_1.prototxt"
 #model_file: "models/toy_design/toy2.prototxt"
 #model_file: "models/toy_design/toy3.prototxt"
-#model_file: "models/toy_design/toy4.prototxt"
+model_file: "models/toy_design/toy4.prototxt"
+#model_file: "models/toy_design/toy5.prototxt"
 
 ## technology node (default to 28nm)
 tech_node: 28
@@ -49,8 +50,8 @@ bit_width: 8
 memory_type: ROM
 
 # append buffer capacity
-append_buffer_capacity: 100
+append_buffer_capacity: 10
 
 # target pixel inference rate
-pixel_inference_rate: 100
+pixel_inference_rate: 10
 

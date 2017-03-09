@@ -9,6 +9,7 @@
 #define __DEMUX_OUT_REG_HPP__
 
 #include "header/systemc/data_type.hpp"
+#include "header/systemc/models/demux_model.hpp"
 #include <systemc.h>
 
 class DemuxOutReg : public sc_module {
@@ -31,15 +32,27 @@ class DemuxOutReg : public sc_module {
 
   public:
     // constructor
-    explicit DemuxOutReg(sc_module_name module_name, int Nout, int Pout);
+    explicit DemuxOutReg(sc_module_name module_name, int Nout, int Pout,
+        int bit_width=8, int tech_node=28);
     ~DemuxOutReg();
 
     // main process of the DemuxOutReg
     void DemuxOutRegProc();
 
+    // area model of the demux
+    double Area() const;
+    // power model of the demux
+    double StaticPower() const;
+    double DynamicPower() const;
+    double TotalPower() const;
+
   private:
     int Nout_;      // output feature map depth
     int Pout_;      // output parallelism of the feature map
+
+    // demux model
+    DemuxModel* demux_model_;
+    double dynamic_energy_;
 };
 
 #endif

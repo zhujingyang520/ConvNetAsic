@@ -34,13 +34,17 @@ class PoolArray : public sc_module {
       MAX, AVG
     };
 
-    // area of the pool array
-    double Area(int bit_width, int tech_node) const;
+    // area model of the pool array
+    double Area() const;
+    // power model of the pool array
+    double StaticPower() const;
+    double DynamicPower() const;
+    double TotalPower() const;
 
   public:
     // constructor
     explicit PoolArray(sc_module_name module_name, int Kh, int Kw, int Pin,
-        PoolMethod pool_method=MAX);
+        PoolMethod pool_method=MAX, int bit_width=8, int tech_node=28);
     // destructor
     ~PoolArray();
 
@@ -51,6 +55,9 @@ class PoolArray : public sc_module {
     int Pin_;                 // input parallelism
     int Kh_, Kw_;             // spatial dimension of kernel
     PoolMethod pool_method_;  // pool method: max or avg
+    // adder model
+    AdderModel* adder_model_;
+    double dynamic_energy_;
 };
 
 #endif

@@ -13,7 +13,8 @@ using namespace std;
  * Initialize the configuration parameters, including kernel size. And allocate
  * the DFFs together with the SRAM to form the main body of the line buffer.
  */
-LineBuffer::LineBuffer(sc_module_name module_name, int Kh, int Kw, int h, int w)
+LineBuffer::LineBuffer(sc_module_name module_name, int Kh, int Kw, int h, int w,
+    int bit_width, int tech_node)
   : sc_module(module_name), Kh_(Kh), Kw_(Kw), h_(h), w_(w) {
     // there are Kh_ * Kw_ DFFs in total
     payload_dff_ = new Payload[Kh_*Kw_];
@@ -27,6 +28,13 @@ LineBuffer::LineBuffer(sc_module_name module_name, int Kh, int Kw, int h, int w)
       payload_sram_ = new queue<Payload> [Kh_-1];
       sram_depth_ = w-Kw_;
     }
+
+    // memory model for line buffer
+    const int memory_width = MemoryWidth() * bit_width;
+    const int memory_depth = MemoryDepth();
+    memory_model_ = new MemoryModel(memory_width, memory_depth, tech_node,
+        config::ConfigParameter_MemoryType_RAM);
+    dynamic_energy_ = 0.;
 
     // LineBufferProc: synchronous with clock and reset
     SC_METHOD(LineBufferProc);
@@ -68,7 +76,15 @@ void LineBuffer::LineBufferProc() {
         cur_payload_sram.push(Payload(0));
       }
     }
+
+    // write the payload_dff_ to output data
+    for (int i = 0; i < Kh_*Kw_; ++i) {
+      output_data[i] = payload_dff_[i];
+    }
   } else if (input_data_valid.read()) {
+    // adds one operation of energy
+    dynamic_energy_ += (memory_model_->DynamicEnergyOfReadOperation() +
+        memory_model_->DynamicEnergyOfWriteOperation());
 #ifdef DATA_PATH
     // not reset & input data valid
     Payload streamed_data = input_data.read();
@@ -99,12 +115,12 @@ void LineBuffer::LineBufferProc() {
       payload_dff_[(Kh_-1)*Kw_+j] = streamed_data;
       streamed_data = tmp_data;
     }
-#endif
-  }
 
-  // write the payload_dff_ to output data
-  for (int i = 0; i < Kh_*Kw_; ++i) {
-    output_data[i] = payload_dff_[i];
+    // write the payload_dff_ to output data
+    for (int i = 0; i < Kh_*Kw_; ++i) {
+      output_data[i] = payload_dff_[i];
+    }
+#endif
   }
 }
 
@@ -114,11 +130,27 @@ void LineBuffer::LineBufferProc() {
  * Area model of the current line buffer. The area is estimated based on the
  * SRAM size utilized in the line buffer.
  */
-double LineBuffer::Area(int bit_width, int tech_node) const {
-  // there are Kh_-1 line buffers, each is of depth sram_depth_
-  const int memory_size = (Kh_-1)*sram_depth_*bit_width;
-  // line buffer is always implemented by SRAM
-  MemoryModel memory_model(memory_size/1024., tech_node,
-      config::ConfigParameter_MemoryType_RAM);
-  return memory_model.Area();
+double LineBuffer::Area() const {
+  return memory_model_->Area();
+}
+
+/*
+ * Implmentation notes: Power
+ * ---------------------------
+ * Total power consumption includes the dynamic power and the static power.
+ */
+double LineBuffer::StaticPower() const {
+  return memory_model_->StaticPower();
+}
+
+double LineBuffer::DynamicPower() const {
+  sc_time clock_period = dynamic_cast<const sc_clock*>(clock.get_interface())->
+    period();
+  sc_time sim_time = sc_time_stamp();
+  int total_cycles = sim_time / clock_period;
+  return dynamic_energy_ / total_cycles;
+}
+
+double LineBuffer::TotalPower() const {
+  return StaticPower() + DynamicPower();
 }

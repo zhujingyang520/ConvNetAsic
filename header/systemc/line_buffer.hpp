@@ -25,14 +25,24 @@ class LineBuffer : public sc_module {
 
     SC_HAS_PROCESS(LineBuffer);
 
-    // area model
-    double Area(int bit_width, int tech_node=28) const;
-    inline double MemorySize() const { return (Kh_-1)*sram_depth_; }
+    // hardware-related model
+    // area model of the line buffer
+    double Area() const;
+    // power model of the line buffer
+    double StaticPower() const;
+    double DynamicPower() const;
+    double TotalPower() const;
+
+    // return the memory depth & width
+    inline int MemoryDepth() const { return sram_depth_; }
+    inline int MemoryWidth() const { return Kh_-1; }
+    // memory size [no. entries]
+    inline int MemorySize() const { return MemoryDepth()*MemoryWidth(); }
 
   public:
     // constructor
     explicit LineBuffer(sc_module_name module_name, int Kh, int Kw, int h,
-        int w);
+        int w, int bit_width=8, int tech_node=28);
     // destructor
     ~LineBuffer();
 
@@ -49,6 +59,9 @@ class LineBuffer : public sc_module {
     // payload SRAM
     std::queue<Payload>* payload_sram_;
     int sram_depth_;  // sram depth
+
+    MemoryModel* memory_model_;
+    double dynamic_energy_;
 };
 
 #endif

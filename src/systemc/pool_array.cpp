@@ -14,7 +14,8 @@ using namespace std;
  * Allocates the input & output data port of the pool array.
  */
 PoolArray::PoolArray(sc_module_name module_name, int Kh, int Kw, int Pin,
-    PoolMethod pool_method) : sc_module(module_name) {
+    PoolMethod pool_method, int bit_width, int tech_node) :
+  sc_module(module_name) {
   Kh_ = Kh;
   Kw_ = Kw;
   Pin_ = Pin;
@@ -28,12 +29,24 @@ PoolArray::PoolArray(sc_module_name module_name, int Kh, int Kw, int Pin,
   // PoolArrayProc: synchronous with clock and reset
   SC_METHOD(PoolArrayProc);
   sensitive << clock.pos() << reset;
+
+  // allocate the adder model
+  if (pool_method == AVG) {
+    adder_model_ = new AdderModel(bit_width, tech_node);
+  } else {
+    adder_model_ = NULL;
+  }
+  dynamic_energy_ = 0.;
 }
 
 PoolArray::~PoolArray() {
   delete [] pool_array_in_valid;
   delete [] pool_array_in_data;
   delete [] pool_array_out_data;
+
+  if (adder_model_) {
+    delete adder_model_;
+  }
 }
 
 void PoolArray::PoolArrayProc() {
@@ -71,6 +84,7 @@ void PoolArray::PoolArrayProc() {
               }
             }
             pool_array_out_data[i].write(result);
+            // TODO
             break;
           case AVG:
             // compute the average value within the sliding window
@@ -81,6 +95,9 @@ void PoolArray::PoolArrayProc() {
             }
             result = result / Payload(Kh_*Kw_);
             pool_array_out_data[i].write(result);
+            // increments the dynamic power consumption
+            dynamic_energy_ += (Kh_*Kw_-1)*adder_model_->
+              DynamicEnergyOfOneOperation();
             break;
           default:
             cerr << "unexpected pooling method: " << pool_method_ << endl;
@@ -92,7 +109,23 @@ void PoolArray::PoolArrayProc() {
       }
     }
 #else
-    //cout << "@" << sc_time_stamp() << " PoolArray recieved data" << endl;
+    // update the dynamic energy for the pooling array
+    for (int i = 0; i < Pin_; ++i) {
+      if (pool_array_in_valid[i].read()) {
+        switch (pool_method_) {
+          case MAX:
+            // TODO
+            break;
+          case AVG:
+            dynamic_energy_ += (Kh_*Kw_-1)*adder_model_->
+              DynamicEnergyOfOneOperation();
+            break;
+          default:
+            cerr << "unexpected pooling method: " << pool_method_ << endl;
+            exit(1);
+        }
+      }
+    }
 #endif
   }
 }
@@ -102,17 +135,42 @@ void PoolArray::PoolArrayProc() {
  * --------------------------
  * Depends on the POOL method, the area model is different.
  */
-double PoolArray::Area(int bit_width, int tech_node) const {
+double PoolArray::Area() const {
+  // number of computation units
+  const int num_units = Pin_ * (Kh_ * Kw_ - 1);
   if (pool_method_ == MAX) {
-    // TODO: model the comparator area
-    const int num_comparators = Pin_ * (Kh_ * Kw_ - 1);
-    return 0. * num_comparators;
+    // TODO:
+    return 0. * num_units;
   } else if (pool_method_ == AVG) {
-    const int num_adders = Pin_ * (Kh_ * Kw_ - 1);
-    AdderModel adder_model(bit_width, tech_node);
-    return num_adders * adder_model.Area();
+    return adder_model_->Area() * num_units;
   } else {
     cerr << "undefined pool method: " << pool_method_ << endl;
     exit(1);
   }
+}
+
+double PoolArray::StaticPower() const {
+  // number of computation units
+  const int num_units = Pin_ * (Kh_ * Kw_ - 1);
+  if (pool_method_ == MAX) {
+    // TODO
+    return 0. * num_units;
+  } else if (pool_method_ == AVG) {
+    return adder_model_->StaticPower() * num_units;
+  } else {
+    cerr << "undefined pool method: " << pool_method_ << endl;
+    exit(1);
+  }
+}
+
+double PoolArray::DynamicPower() const {
+  sc_time clock_period = dynamic_cast<const sc_clock*>(clock.get_interface())->
+    period();
+  sc_time sim_time = sc_time_stamp();
+  int total_cycles = sim_time / clock_period;
+  return dynamic_energy_ / total_cycles;
+}
+
+double PoolArray::TotalPower() const {
+  return StaticPower() + DynamicPower();
 }
