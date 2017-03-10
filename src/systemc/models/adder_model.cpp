@@ -10,7 +10,8 @@
 using namespace std;
 using namespace config;
 
-AdderModel::AdderModel(int bit_width, int tech_node) : Model(tech_node) {
+AdderModel::AdderModel(int bit_width, int tech_node, double clk_freq)
+  : Model(tech_node, clk_freq) {
   bit_width_ = bit_width;
 }
 

@@ -10,8 +10,8 @@
 using namespace std;
 using namespace config;
 
-MuxModel::MuxModel(int bit_width, int num_inputs, int tech_node) :
-  Model(tech_node) {
+MuxModel::MuxModel(int bit_width, int num_inputs, int tech_node,
+    double clk_freq) : Model(tech_node, clk_freq) {
   bit_width_ = bit_width;
   num_inputs_ = num_inputs;
 }

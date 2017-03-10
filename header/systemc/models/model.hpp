@@ -19,6 +19,7 @@ class Model {
     virtual double StaticPower() const = 0;
 
     inline int tech_node() const { return tech_node_; }
+    inline double clk_freq() const { return clk_freq_; }
 
   protected:
     // technology node [nm]

@@ -8,8 +8,8 @@
 using namespace std;
 
 LineBufferMux::LineBufferMux(sc_module_name module_name, int Kh, int Kw,
-    int Nin, int Pin, int bit_width, int tech_node) : sc_module(module_name), 
-  Kh_(Kh), Kw_(Kw), Nin_(Nin), Pin_(Pin) {
+    int Nin, int Pin, int bit_width, int tech_node, double clk_freq) :
+  sc_module(module_name), Kh_(Kh), Kw_(Kw), Nin_(Nin), Pin_(Pin) {
     // input data from Nin line buffer: Nin*Kh*Kw
     line_buffer_data = new sc_in<Payload>[Nin_*Kh_*Kw_];
     // output data to Pin multiplier array
@@ -22,7 +22,7 @@ LineBufferMux::LineBufferMux(sc_module_name module_name, int Kh, int Kw,
     // one mux model: the mux after line buffers is not fully broadcast
     // it only requires to broadcast to one of multiplier array
     const int num_inputs = ceil(static_cast<double>(Nin)/Pin);
-    mux_model_ = new MuxModel(Kh*Kw*bit_width, num_inputs, tech_node);
+    mux_model_ = new MuxModel(Kh*Kw*bit_width, num_inputs, tech_node, clk_freq);
     dynamic_energy_ = 0.;
   }
 

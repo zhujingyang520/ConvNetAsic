@@ -14,7 +14,7 @@ using namespace std;
  * the DFFs together with the SRAM to form the main body of the line buffer.
  */
 LineBuffer::LineBuffer(sc_module_name module_name, int Kh, int Kw, int h, int w,
-    int bit_width, int tech_node)
+    int bit_width, int tech_node, double clk_freq)
   : sc_module(module_name), Kh_(Kh), Kw_(Kw), h_(h), w_(w) {
     // there are Kh_ * Kw_ DFFs in total
     payload_dff_ = new Payload[Kh_*Kw_];
@@ -33,7 +33,7 @@ LineBuffer::LineBuffer(sc_module_name module_name, int Kh, int Kw, int h, int w,
     const int memory_width = MemoryWidth() * bit_width;
     const int memory_depth = MemoryDepth();
     memory_model_ = new MemoryModel(memory_width, memory_depth, tech_node,
-        config::ConfigParameter_MemoryType_RAM);
+        config::ConfigParameter_MemoryType_RAM, clk_freq);
     dynamic_energy_ = 0.;
 
     // LineBufferProc: synchronous with clock and reset

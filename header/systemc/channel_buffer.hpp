@@ -57,6 +57,7 @@ class ChannelBuffer : public sc_module {
     std::queue<Payload>* buffer_;
     int max_buffer_size_;     // max buffer size in the simulation
     // memory hardware model
+    static const int INIT_MEM_DEPTH = 1024;
     MemoryModel* memory_model_;
     // we split the read and write energy of the memory
     double dynamic_write_energy_;
@@ -65,7 +66,8 @@ class ChannelBuffer : public sc_module {
   public:
     // constructor
     explicit ChannelBuffer(sc_module_name module_name, int Nin,
-        int capacity=INT_MAX, int bit_width=8, int tech_node=28);
+        int capacity=INT_MAX, int bit_width=8, int tech_node=28,
+        double clk_freq=1.);
     // destructor
     ~ChannelBuffer();
 

@@ -141,10 +141,30 @@ void Top::ReportPowerBreakdown() const {
   cout << "# ConvNetAsic Power Breakdown [uW]" << endl;
   cout << "# Static Power [S], Dynamic Power [D], Total Power [T]" << endl;
   cout << "###################################" << endl;
+  double mult_static = 0, mult_dynamic = 0;
+  double line_buffer_static = 0, line_buffer_dynamic = 0;
+  double line_buffer_mux_static = 0, line_buffer_mux_dynamic = 0;
+  double adder_static = 0, adder_dynamic = 0;
+  double weight_mem_static = 0, weight_mem_dynamic = 0;
+  double pool_array_static = 0, pool_array_dynamic = 0;
+  double demux_static = 0, demux_dynamic = 0;
+  double channel_buffer_static = 0, channel_buffer_dynamic = 0;
   // convolutional layer pe
   for (size_t i = 0; i < convnet_acc->conv_layer_pe_.size(); ++i) {
     const ConvLayerPe* conv_layer_pe = convnet_acc->conv_layer_pe_[i];
     // hierarchy of convolution layer pe
+    line_buffer_static += conv_layer_pe->line_buffer_array_->StaticPower();
+    line_buffer_dynamic += conv_layer_pe->line_buffer_array_->DynamicPower();
+    line_buffer_mux_static += conv_layer_pe->line_buffer_mux_->StaticPower();
+    line_buffer_mux_dynamic += conv_layer_pe->line_buffer_mux_->DynamicPower();
+    weight_mem_static += conv_layer_pe->weight_mem_->StaticPower();
+    weight_mem_dynamic += conv_layer_pe->weight_mem_->DynamicPower();
+    mult_static += conv_layer_pe->mult_array_->StaticPower();
+    mult_dynamic += conv_layer_pe->mult_array_->DynamicPower();
+    adder_static += conv_layer_pe->add_array_->StaticPower();
+    adder_dynamic += conv_layer_pe->add_array_->DynamicPower();
+    demux_static += conv_layer_pe->demux_out_reg_->StaticPower();
+    demux_dynamic += conv_layer_pe->demux_out_reg_->DynamicPower();
 
     // LOG info
     cout << conv_layer_pe->basename() << ": " << conv_layer_pe->TotalPower()
@@ -174,6 +194,14 @@ void Top::ReportPowerBreakdown() const {
   // pooling layer pe
   for (size_t i = 0; i < convnet_acc->pool_layer_pe_.size(); ++i) {
     const PoolLayerPe* pool_layer_pe = convnet_acc->pool_layer_pe_[i];
+    line_buffer_static += pool_layer_pe->line_buffer_array_->StaticPower();
+    line_buffer_dynamic += pool_layer_pe->line_buffer_array_->DynamicPower();
+    line_buffer_mux_static += pool_layer_pe->line_buffer_mux_->StaticPower();
+    line_buffer_mux_dynamic += pool_layer_pe->line_buffer_mux_->DynamicPower();
+    pool_array_static += pool_layer_pe->pool_array_->StaticPower();
+    pool_array_dynamic += pool_layer_pe->pool_array_->DynamicPower();
+    demux_static += pool_layer_pe->demux_out_reg_->StaticPower();
+    demux_dynamic += pool_layer_pe->demux_out_reg_->DynamicPower();
 
     // LOG info
     cout << pool_layer_pe->basename() << ": " << pool_layer_pe->TotalPower()
@@ -197,12 +225,37 @@ void Top::ReportPowerBreakdown() const {
   // channel buffer
   for (size_t i = 0; i < convnet_acc->channel_buffer_.size(); ++i) {
     const ChannelBuffer* channel_buffer = convnet_acc->channel_buffer_[i];
+    channel_buffer_static += channel_buffer->StaticPower();
+    channel_buffer_dynamic += channel_buffer->DynamicPower();
+
     cout << channel_buffer->basename() << " with max buffer depth: "
       << channel_buffer->MaxBufferSize() << " [S]: "
       << channel_buffer-> StaticPower() << " [D]: "
       << channel_buffer->DynamicPower() << " [T]: "
       << channel_buffer->TotalPower() << endl;
   }
+  cout << "###############################" << endl;
+  cout << "- Line buffer: [S]: " <<  line_buffer_static << " [D]: "
+    << line_buffer_dynamic << " [T]: " << line_buffer_static +
+    line_buffer_dynamic << endl;
+  cout << "- Line buffer mux: [S]: " << line_buffer_mux_static << " [D]: "
+    << line_buffer_mux_dynamic << " [T]: " << line_buffer_static +
+    line_buffer_mux_dynamic << endl;
+  cout << "- Mult array: [S]: " << mult_static << " [D]: " << mult_dynamic
+    << " [T]: " << mult_static + mult_dynamic << endl;
+  cout << "- Adder array: [S]: " << adder_static << " [D]: " << adder_dynamic
+    << " [T]: " << adder_static + adder_dynamic << endl;
+  cout << "- Weight memory: [S]: " << weight_mem_static << " [D]: "
+    << weight_mem_dynamic << " [T]: "<< weight_mem_static + weight_mem_dynamic
+    <<  endl;
+  cout << "- Pool array: [S]: " << pool_array_static << " [D]: "
+    << pool_array_dynamic << " [T]: " << pool_array_static + pool_array_dynamic
+    << endl;
+  cout << "- Demux: [S]: " << demux_static << " [D]: " << demux_dynamic
+    << " [T]: " << demux_static + demux_dynamic << endl;
+  cout << "- Channel buffer: [S]: " << channel_buffer_static << " [D]: "
+    << channel_buffer_dynamic << " [T]: " << channel_buffer_static +
+    channel_buffer_dynamic << endl;
   cout << "###############################" << endl;
 }
 

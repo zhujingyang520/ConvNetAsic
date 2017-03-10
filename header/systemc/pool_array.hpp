@@ -10,6 +10,7 @@
 
 #include "header/systemc/data_type.hpp"
 #include "header/systemc/models/adder_model.hpp"
+#include "header/systemc/models/comparator_model.hpp"
 #include <systemc.h>
 
 class PoolArray : public sc_module {
@@ -44,7 +45,8 @@ class PoolArray : public sc_module {
   public:
     // constructor
     explicit PoolArray(sc_module_name module_name, int Kh, int Kw, int Pin,
-        PoolMethod pool_method=MAX, int bit_width=8, int tech_node=28);
+        PoolMethod pool_method=MAX, int bit_width=8, int tech_node=28,
+        double clk_freq=1.);
     // destructor
     ~PoolArray();
 
@@ -57,6 +59,8 @@ class PoolArray : public sc_module {
     PoolMethod pool_method_;  // pool method: max or avg
     // adder model
     AdderModel* adder_model_;
+    // comparator model
+    ComparatorModel* comparator_model_;
     double dynamic_energy_;
 };
 

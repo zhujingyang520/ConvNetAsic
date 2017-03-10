@@ -66,6 +66,7 @@ class ConvNetAcc : public sc_module {
     int input_spatial_dim_; // input spatial dimension
     int bit_width_;       // bit width of each number
     int tech_node_;       // technology node
+    double clk_freq_;     // clock frequency [GHz]
     // weight (kernel) memory type
     config::ConfigParameter_MemoryType memory_type_;
 

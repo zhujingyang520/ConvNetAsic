@@ -8,7 +8,7 @@
 using namespace std;
 
 DemuxOutReg::DemuxOutReg(sc_module_name module_name, int Nout, int Pout,
-    int bit_width, int tech_node)
+    int bit_width, int tech_node, double clk_freq)
   : sc_module(module_name), Nout_(Nout), Pout_(Pout) {
     // allocate the input data port
     in_data = new sc_in<Payload> [Pout_];
@@ -22,7 +22,7 @@ DemuxOutReg::DemuxOutReg(sc_module_name module_name, int Nout, int Pout,
     // one demux model: the demux after ALU is not fully broadcast to all the
     // locations in the output registers
     const int num_outputs = ceil(static_cast<double>(Nout)/Pout);
-    demux_model_ = new DemuxModel(bit_width, num_outputs, tech_node);
+    demux_model_ = new DemuxModel(bit_width, num_outputs, tech_node, clk_freq);
     dynamic_energy_ = 0.;
   }
 

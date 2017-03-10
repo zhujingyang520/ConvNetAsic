@@ -20,6 +20,7 @@ ConvNetAcc::ConvNetAcc(sc_module_name module_name, const Net& net,
   // obtain the hardware related settings
   bit_width_ = config_param.bit_width();
   tech_node_ = config_param.tech_node();
+  clk_freq_ = config_param.clk_freq();
   memory_type_ = config_param.memory_type();
 
   // initialize the parallelism
@@ -368,7 +369,7 @@ void ConvNetAcc::InitPoolingPe(const Net& net, int layer_id) {
   // allocate the new PoolLayerPe
   PoolLayerPe* pool_layer_pe = new PoolLayerPe(module_name, Kh, Kw, h, w, Nin,
       Pin, Pad_h, Pad_w, Stride_h, Stride_w, pool_method, bit_width_,
-      tech_node_);
+      tech_node_, clk_freq_);
   pool_layer_pe_.push_back(pool_layer_pe);
   // make the connections
   pool_layer_pe->clock(clock);
@@ -488,7 +489,7 @@ void ConvNetAcc::InitInnerProductLayer(const Net& net, int layer_id) {
   // allocate the new ConvLayerPe
   ConvLayerPe* fc_layer_pe = new ConvLayerPe(module_name, Kh, Kw, h, w, Nin,
       Nout, Pin, Pout, Pad_h, Pad_w, Stride_h, Stride_w, memory_type_,
-      bit_width_, tech_node_);
+      bit_width_, tech_node_, clk_freq_);
   conv_layer_pe_.push_back(fc_layer_pe);
   // make the connections
   fc_layer_pe->clock(clock);
@@ -654,7 +655,7 @@ void ConvNetAcc::AppendChannelBuffer(const Net& net, int layer_id, int blob_id,
   const int Nin = net.top_blobs_shape_ptr_[layer_id][blob_id]->at(1);
   // allocate the channel buffer
   ChannelBuffer *channel_buffer = new ChannelBuffer(module_name, Nin, capacity,
-      bit_width_, tech_node_);
+      bit_width_, tech_node_, clk_freq_);
   channel_buffer_.push_back(channel_buffer);
   // make the connections
   channel_buffer->clock(clock);
@@ -720,7 +721,7 @@ void ConvNetAcc::PrependChannelBuffer(const Net& net, int layer_id, int blob_id,
   const int Nin = net.bottom_blobs_shape_ptr_[layer_id][blob_id]->at(1);
   // allocate the channel buffer
   ChannelBuffer *channel_buffer = new ChannelBuffer(module_name, Nin, capacity,
-      bit_width_, tech_node_);
+      bit_width_, tech_node_, clk_freq_);
   channel_buffer_.push_back(channel_buffer);
   // make the connections
   channel_buffer->clock(clock);
@@ -874,7 +875,7 @@ void ConvNetAcc::InitConvolutionPe(const Net& net, int layer_id) {
   // allocate the new ConvLayerPe
   ConvLayerPe* conv_layer_pe = new ConvLayerPe(module_name, Kh, Kw, h, w, Nin,
       Nout, Pin, Pout, Pad_h, Pad_w, Stride_h, Stride_w, memory_type_,
-      bit_width_, tech_node_);
+      bit_width_, tech_node_, clk_freq_);
   conv_layer_pe_.push_back(conv_layer_pe);
   // make the connections
   conv_layer_pe->clock(clock);

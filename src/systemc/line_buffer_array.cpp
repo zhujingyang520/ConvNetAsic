@@ -14,7 +14,7 @@ using namespace std;
  * interconnections.
  */
 LineBufferArray::LineBufferArray(sc_module_name module_name, int Kh, int Kw,
-    int h, int w, int Nin, int bit_width, int tech_node)
+    int h, int w, int Nin, int bit_width, int tech_node, double clk_freq)
   : sc_module(module_name), Kh_(Kh), Kw_(Kw), h_(h), w_(w), Nin_(Nin) {
   // allocate the ports
   input_data = new sc_in<Payload> [Nin];
@@ -25,7 +25,8 @@ LineBufferArray::LineBufferArray(sc_module_name module_name, int Kh, int Kw,
   line_buffer_ = new LineBuffer* [Nin];
   for (int i = 0; i < Nin; ++i) {
     sprintf(name, "line_buffer_%d", i);
-    line_buffer_[i] = new LineBuffer(name, Kh, Kw, h, w, bit_width, tech_node);
+    line_buffer_[i] = new LineBuffer(name, Kh, Kw, h, w, bit_width, tech_node,
+        clk_freq);
     line_buffer_[i]->clock(clock);
     line_buffer_[i]->reset(reset);
     line_buffer_[i]->input_data(input_data[i]);
@@ -38,11 +39,10 @@ LineBufferArray::LineBufferArray(sc_module_name module_name, int Kh, int Kw,
   // we use the centralized model of Nin line buffers (data width is incremented
   // by Nin times)
   const int centralized_memory_depth = line_buffer_[0]->MemoryDepth();
-  const int centralized_memory_width = bit_width * Nin * line_buffer_[0]->
-    MemoryWidth();
+  const int centralized_memory_width = Nin * line_buffer_[0]->MemoryWidth();
   memory_model_ = new MemoryModel(centralized_memory_width,
       centralized_memory_depth, tech_node,
-      config::ConfigParameter_MemoryType_RAM);
+      config::ConfigParameter_MemoryType_RAM, clk_freq);
   dynamic_energy_ = 0.;
 
   SC_METHOD(PowerManagement);

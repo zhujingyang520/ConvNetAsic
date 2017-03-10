@@ -13,7 +13,7 @@ using namespace std;
  * Allocate the input & output data port of AddArray.
  */
 AddArray::AddArray(sc_module_name module_name, int Kh, int Kw, int Pin,
-    int Pout, int bit_width, int tech_node)
+    int Pout, int bit_width, int tech_node, double clk_freq)
   : sc_module(module_name), Kh_(Kh), Kw_(Kw), Pin_(Pin), Pout_(Pout) {
     // input valid no. = Pout
     add_array_in_valid = new sc_in<bool> [Pout_];
@@ -25,7 +25,7 @@ AddArray::AddArray(sc_module_name module_name, int Kh, int Kw, int Pin,
     add_array_out_data = new sc_out<Payload> [Pout_];
 
     // initialize the adder model
-    adder_model_ = new AdderModel(bit_width, tech_node);
+    adder_model_ = new AdderModel(bit_width, tech_node, clk_freq);
     dynamic_energy_ = 0.;
 
     // AddArrayProc: synchronous with clock and reset

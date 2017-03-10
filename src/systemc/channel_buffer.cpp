@@ -8,7 +8,7 @@
 using namespace std;
 
 ChannelBuffer::ChannelBuffer(sc_module_name module_name, int Nin, int capacity,
-    int bit_width, int tech_node)
+    int bit_width, int tech_node, double clk_freq)
   : sc_module(module_name), Nin_(Nin), capacity_(capacity) {
   // allocate the port width
   prev_layer_data = new sc_in<Payload> [Nin];
@@ -32,13 +32,13 @@ ChannelBuffer::ChannelBuffer(sc_module_name module_name, int Nin, int capacity,
     }
   }
 
-  // we will use the capacity as the memory depth
+  // we will use the default Memory Model depth as the initial memory depth
   // when we report the power consumption, we will scale the dynamic energy to
   // the actual buffer depth (i.e. max_buffer_size_)
   const int memory_width = Nin * bit_width;
-  const int memory_depth = capacity;
+  const int memory_depth = INIT_MEM_DEPTH;
   memory_model_ = new MemoryModel(memory_width, memory_depth, tech_node,
-      config::ConfigParameter_MemoryType_RAM);
+      config::ConfigParameter_MemoryType_RAM, clk_freq);
   // initialize the dynamic energy
   dynamic_write_energy_ = 0.;
   dynamic_read_energy_ = 0.;
@@ -181,9 +181,10 @@ double ChannelBuffer::Area() const {
   const int memory_width = memory_model_->memory_width();
   const int memory_depth = max_buffer_size_;
   const int tech_node = memory_model_->tech_node();
+  const double clk_freq = memory_model_->clk_freq();
   // use the updated memory depth
   MemoryModel updated_memory_model(memory_width, memory_depth, tech_node,
-      config::ConfigParameter_MemoryType_RAM);
+      config::ConfigParameter_MemoryType_RAM, clk_freq);
   return updated_memory_model.Area();
 }
 
@@ -199,9 +200,10 @@ double ChannelBuffer::StaticPower() const {
   const int memory_width = memory_model_->memory_width();
   const int memory_depth = max_buffer_size_;
   const int tech_node = memory_model_->tech_node();
+  const double clk_freq = memory_model_->clk_freq();
   // use the updated memory depth
   MemoryModel updated_memory_model(memory_width, memory_depth, tech_node,
-      config::ConfigParameter_MemoryType_RAM);
+      config::ConfigParameter_MemoryType_RAM, clk_freq);
   return updated_memory_model.StaticPower();
 }
 
@@ -220,18 +222,19 @@ double ChannelBuffer::DynamicPower() const {
   const int memory_width = memory_model_->memory_width();
   const int memory_depth = max_buffer_size_;
   const int tech_node = memory_model_->tech_node();
+  const double clk_freq = memory_model_->clk_freq();
   if (memory_depth == 0 || memory_width == 0) {
     return 0.;
   }
   MemoryModel updated_memory_model(memory_width, memory_depth, tech_node,
-      config::ConfigParameter_MemoryType_RAM);
+      config::ConfigParameter_MemoryType_RAM, clk_freq);
   double read_energy_ratio = (memory_model_->DynamicEnergyOfReadOperation() > 0)
     ? (updated_memory_model.DynamicEnergyOfReadOperation() /
      memory_model_->DynamicEnergyOfReadOperation()) : 0;
   double write_energy_ratio = (memory_model_->DynamicEnergyOfWriteOperation()
       > 0) ? (updated_memory_model.DynamicEnergyOfWriteOperation() /
         memory_model_->DynamicEnergyOfWriteOperation()) : 0;
-  // scale the energy to the correcy ammount
+  // scale the energy to the correct ammount
   const double dynamic_energy_ = dynamic_write_energy_ * write_energy_ratio +
     dynamic_read_energy_ * read_energy_ratio;
   return dynamic_energy_ / total_cycles;

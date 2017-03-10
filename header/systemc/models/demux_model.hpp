@@ -14,7 +14,8 @@
 class DemuxModel : public Model {
   public:
     // constructor: provide the bit width & number of outputs
-    DemuxModel(int bit_width, int num_outputs, int tech_node=28);
+    DemuxModel(int bit_width, int num_outputs, int tech_node=28,
+        double clk_freq=1.);
     virtual ~DemuxModel() {}
 
     // Area & Power Metrics of the Demux

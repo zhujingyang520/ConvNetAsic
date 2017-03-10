@@ -17,7 +17,7 @@ class MemoryModel : public Model {
     // technology node [nm], the memory type is in {ROM, RAM}
     MemoryModel(int memory_width, int memory_depth, int tech_node=28,
         config::ConfigParameter_MemoryType memory_type=config::
-        ConfigParameter_MemoryType_ROM);
+        ConfigParameter_MemoryType_ROM, double clk_freq=1.);
     // destructor
     virtual ~MemoryModel() {}
 

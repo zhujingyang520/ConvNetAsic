@@ -7,7 +7,6 @@ message ConfigParameter {
   required string model_file = 1; // model prototxt file
   optional int32 tech_node = 2 [default = 28];  // technology node
   required int32 bit_width = 3;   // required bit width
-  //optional bool mult_pipeline = 4 [default = false];  // multiplier pipeline
 
   enum MemoryType {
     ROM = 0;
@@ -15,11 +14,12 @@ message ConfigParameter {
   };
 
   // memory type
-  optional MemoryType memory_type = 5 [default = ROM];
+  optional MemoryType memory_type = 4 [default = ROM];
 
   // simulation related setting
-  required int32 reset_period = 6;  // reset period clock cycle
-  required int32 sim_period = 7;    // simulation period clock cycle
+  required int32 reset_period = 5;  // reset period clock cycle
+  required int32 sim_period = 6;    // simulation period clock cycle
+  optional double clk_freq = 7 [default = 1.];  // clock frequency [GHz]
 
   // append buffer size after each processing element
   optional int32 append_buffer_capacity = 8 [default = 0];

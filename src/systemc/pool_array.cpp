@@ -14,7 +14,7 @@ using namespace std;
  * Allocates the input & output data port of the pool array.
  */
 PoolArray::PoolArray(sc_module_name module_name, int Kh, int Kw, int Pin,
-    PoolMethod pool_method, int bit_width, int tech_node) :
+    PoolMethod pool_method, int bit_width, int tech_node, double clk_freq) :
   sc_module(module_name) {
   Kh_ = Kh;
   Kw_ = Kw;
@@ -32,9 +32,15 @@ PoolArray::PoolArray(sc_module_name module_name, int Kh, int Kw, int Pin,
 
   // allocate the adder model
   if (pool_method == AVG) {
-    adder_model_ = new AdderModel(bit_width, tech_node);
+    adder_model_ = new AdderModel(bit_width, tech_node, clk_freq);
   } else {
     adder_model_ = NULL;
+  }
+  // allocate the comparator model
+  if (pool_method == MAX) {
+    comparator_model_ = new ComparatorModel(bit_width, tech_node, clk_freq);
+  } else {
+    comparator_model_ = NULL;
   }
   dynamic_energy_ = 0.;
 }
@@ -46,6 +52,10 @@ PoolArray::~PoolArray() {
 
   if (adder_model_) {
     delete adder_model_;
+  }
+
+  if (comparator_model_) {
+    delete comparator_model_;
   }
 }
 
@@ -84,7 +94,9 @@ void PoolArray::PoolArrayProc() {
               }
             }
             pool_array_out_data[i].write(result);
-            // TODO
+            // increments the dynamic power consumption using comparator model
+            dynamic_energy_ += (Kh_*Kw_-1)*comparator_model_->
+              DynamicEnergyOfOneOperation();
             break;
           case AVG:
             // compute the average value within the sliding window
@@ -95,7 +107,7 @@ void PoolArray::PoolArrayProc() {
             }
             result = result / Payload(Kh_*Kw_);
             pool_array_out_data[i].write(result);
-            // increments the dynamic power consumption
+            // increments the dynamic power consumption using adder model
             dynamic_energy_ += (Kh_*Kw_-1)*adder_model_->
               DynamicEnergyOfOneOperation();
             break;
@@ -114,7 +126,8 @@ void PoolArray::PoolArrayProc() {
       if (pool_array_in_valid[i].read()) {
         switch (pool_method_) {
           case MAX:
-            // TODO
+            dynamic_energy_ += (Kh_*Kw_-1)*comparator_model_->
+              DynamicEnergyOfOneOperation();
             break;
           case AVG:
             dynamic_energy_ += (Kh_*Kw_-1)*adder_model_->
@@ -139,8 +152,7 @@ double PoolArray::Area() const {
   // number of computation units
   const int num_units = Pin_ * (Kh_ * Kw_ - 1);
   if (pool_method_ == MAX) {
-    // TODO:
-    return 0. * num_units;
+    return comparator_model_->Area() * num_units;
   } else if (pool_method_ == AVG) {
     return adder_model_->Area() * num_units;
   } else {
@@ -153,8 +165,7 @@ double PoolArray::StaticPower() const {
   // number of computation units
   const int num_units = Pin_ * (Kh_ * Kw_ - 1);
   if (pool_method_ == MAX) {
-    // TODO
-    return 0. * num_units;
+    return comparator_model_->StaticPower() * num_units;
   } else if (pool_method_ == AVG) {
     return adder_model_->StaticPower() * num_units;
   } else {

@@ -160,26 +160,33 @@ class ConfigParameter : public ::google::protobuf::Message {
   inline ::google::protobuf::int32 bit_width() const;
   inline void set_bit_width(::google::protobuf::int32 value);
 
-  // optional .config.ConfigParameter.MemoryType memory_type = 5 [default = ROM];
+  // optional .config.ConfigParameter.MemoryType memory_type = 4 [default = ROM];
   inline bool has_memory_type() const;
   inline void clear_memory_type();
-  static const int kMemoryTypeFieldNumber = 5;
+  static const int kMemoryTypeFieldNumber = 4;
   inline ::config::ConfigParameter_MemoryType memory_type() const;
   inline void set_memory_type(::config::ConfigParameter_MemoryType value);
 
-  // required int32 reset_period = 6;
+  // required int32 reset_period = 5;
   inline bool has_reset_period() const;
   inline void clear_reset_period();
-  static const int kResetPeriodFieldNumber = 6;
+  static const int kResetPeriodFieldNumber = 5;
   inline ::google::protobuf::int32 reset_period() const;
   inline void set_reset_period(::google::protobuf::int32 value);
 
-  // required int32 sim_period = 7;
+  // required int32 sim_period = 6;
   inline bool has_sim_period() const;
   inline void clear_sim_period();
-  static const int kSimPeriodFieldNumber = 7;
+  static const int kSimPeriodFieldNumber = 6;
   inline ::google::protobuf::int32 sim_period() const;
   inline void set_sim_period(::google::protobuf::int32 value);
+
+  // optional double clk_freq = 7 [default = 1];
+  inline bool has_clk_freq() const;
+  inline void clear_clk_freq();
+  static const int kClkFreqFieldNumber = 7;
+  inline double clk_freq() const;
+  inline void set_clk_freq(double value);
 
   // optional int32 append_buffer_capacity = 8 [default = 0];
   inline bool has_append_buffer_capacity() const;
@@ -221,6 +228,8 @@ class ConfigParameter : public ::google::protobuf::Message {
   inline void clear_has_reset_period();
   inline void set_has_sim_period();
   inline void clear_has_sim_period();
+  inline void set_has_clk_freq();
+  inline void clear_has_clk_freq();
   inline void set_has_append_buffer_capacity();
   inline void clear_has_append_buffer_capacity();
   inline void set_has_pixel_inference_rate();
@@ -237,6 +246,7 @@ class ConfigParameter : public ::google::protobuf::Message {
   ::google::protobuf::int32 bit_width_;
   int memory_type_;
   ::google::protobuf::int32 reset_period_;
+  double clk_freq_;
   ::google::protobuf::int32 sim_period_;
   ::google::protobuf::int32 append_buffer_capacity_;
   ::std::string* trace_file_;
@@ -379,7 +389,7 @@ inline void ConfigParameter::set_bit_width(::google::protobuf::int32 value) {
   // @@protoc_insertion_point(field_set:config.ConfigParameter.bit_width)
 }
 
-// optional .config.ConfigParameter.MemoryType memory_type = 5 [default = ROM];
+// optional .config.ConfigParameter.MemoryType memory_type = 4 [default = ROM];
 inline bool ConfigParameter::has_memory_type() const {
   return (_has_bits_[0] & 0x00000008u) != 0;
 }
@@ -404,7 +414,7 @@ inline void ConfigParameter::set_memory_type(::config::ConfigParameter_MemoryTyp
   // @@protoc_insertion_point(field_set:config.ConfigParameter.memory_type)
 }
 
-// required int32 reset_period = 6;
+// required int32 reset_period = 5;
 inline bool ConfigParameter::has_reset_period() const {
   return (_has_bits_[0] & 0x00000010u) != 0;
 }
@@ -428,7 +438,7 @@ inline void ConfigParameter::set_reset_period(::google::protobuf::int32 value) {
   // @@protoc_insertion_point(field_set:config.ConfigParameter.reset_period)
 }
 
-// required int32 sim_period = 7;
+// required int32 sim_period = 6;
 inline bool ConfigParameter::has_sim_period() const {
   return (_has_bits_[0] & 0x00000020u) != 0;
 }
@@ -452,15 +462,39 @@ inline void ConfigParameter::set_sim_period(::google::protobuf::int32 value) {
   // @@protoc_insertion_point(field_set:config.ConfigParameter.sim_period)
 }
 
-// optional int32 append_buffer_capacity = 8 [default = 0];
-inline bool ConfigParameter::has_append_buffer_capacity() const {
+// optional double clk_freq = 7 [default = 1];
+inline bool ConfigParameter::has_clk_freq() const {
   return (_has_bits_[0] & 0x00000040u) != 0;
 }
-inline void ConfigParameter::set_has_append_buffer_capacity() {
+inline void ConfigParameter::set_has_clk_freq() {
   _has_bits_[0] |= 0x00000040u;
 }
-inline void ConfigParameter::clear_has_append_buffer_capacity() {
+inline void ConfigParameter::clear_has_clk_freq() {
   _has_bits_[0] &= ~0x00000040u;
+}
+inline void ConfigParameter::clear_clk_freq() {
+  clk_freq_ = 1;
+  clear_has_clk_freq();
+}
+inline double ConfigParameter::clk_freq() const {
+  // @@protoc_insertion_point(field_get:config.ConfigParameter.clk_freq)
+  return clk_freq_;
+}
+inline void ConfigParameter::set_clk_freq(double value) {
+  set_has_clk_freq();
+  clk_freq_ = value;
+  // @@protoc_insertion_point(field_set:config.ConfigParameter.clk_freq)
+}
+
+// optional int32 append_buffer_capacity = 8 [default = 0];
+inline bool ConfigParameter::has_append_buffer_capacity() const {
+  return (_has_bits_[0] & 0x00000080u) != 0;
+}
+inline void ConfigParameter::set_has_append_buffer_capacity() {
+  _has_bits_[0] |= 0x00000080u;
+}
+inline void ConfigParameter::clear_has_append_buffer_capacity() {
+  _has_bits_[0] &= ~0x00000080u;
 }
 inline void ConfigParameter::clear_append_buffer_capacity() {
   append_buffer_capacity_ = 0;
@@ -478,13 +512,13 @@ inline void ConfigParameter::set_append_buffer_capacity(::google::protobuf::int3
 
 // optional int32 pixel_inference_rate = 9 [default = 100];
 inline bool ConfigParameter::has_pixel_inference_rate() const {
-  return (_has_bits_[0] & 0x00000080u) != 0;
+  return (_has_bits_[0] & 0x00000100u) != 0;
 }
 inline void ConfigParameter::set_has_pixel_inference_rate() {
-  _has_bits_[0] |= 0x00000080u;
+  _has_bits_[0] |= 0x00000100u;
 }
 inline void ConfigParameter::clear_has_pixel_inference_rate() {
-  _has_bits_[0] &= ~0x00000080u;
+  _has_bits_[0] &= ~0x00000100u;
 }
 inline void ConfigParameter::clear_pixel_inference_rate() {
   pixel_inference_rate_ = 100;
@@ -502,13 +536,13 @@ inline void ConfigParameter::set_pixel_inference_rate(::google::protobuf::int32 
 
 // optional string trace_file = 10 [default = ""];
 inline bool ConfigParameter::has_trace_file() const {
-  return (_has_bits_[0] & 0x00000100u) != 0;
+  return (_has_bits_[0] & 0x00000200u) != 0;
 }
 inline void ConfigParameter::set_has_trace_file() {
-  _has_bits_[0] |= 0x00000100u;
+  _has_bits_[0] |= 0x00000200u;
 }
 inline void ConfigParameter::clear_has_trace_file() {
-  _has_bits_[0] &= ~0x00000100u;
+  _has_bits_[0] &= ~0x00000200u;
 }
 inline void ConfigParameter::clear_trace_file() {
   if (trace_file_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {

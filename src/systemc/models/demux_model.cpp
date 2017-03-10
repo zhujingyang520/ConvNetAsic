@@ -11,8 +11,8 @@
 using namespace std;
 using namespace config;
 
-DemuxModel::DemuxModel(int bit_width, int num_outputs, int tech_node) :
-  Model(tech_node) {
+DemuxModel::DemuxModel(int bit_width, int num_outputs, int tech_node,
+    double clk_freq) : Model(tech_node, clk_freq) {
   bit_width_ = bit_width;
   num_outputs_ = num_outputs;
 }

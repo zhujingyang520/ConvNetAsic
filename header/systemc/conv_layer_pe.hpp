@@ -106,7 +106,7 @@ class ConvLayerPe : public sc_module {
         int Pad_w=0, int Stride_h=1, int Stride_w=1,
         config::ConfigParameter_MemoryType memory_type=
         config::ConfigParameter_MemoryType_ROM, int bit_width=8,
-        int tech_node=28);
+        int tech_node=28, double clk_freq=1.);
     // destructor
     ~ConvLayerPe();
 

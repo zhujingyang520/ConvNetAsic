@@ -14,7 +14,7 @@
 class AdderModel : public Model {
   public:
     // constructor: provide the adder bit width, the technology node [nm]
-    AdderModel(int bit_width, int tech_node=28);
+    AdderModel(int bit_width, int tech_node=28, double clk_freq=1.);
     virtual ~AdderModel() {}
 
     // Area & Power Metric of the adder

@@ -35,13 +35,14 @@ void protobuf_AssignDesc_config_2eproto() {
       "config.proto");
   GOOGLE_CHECK(file != NULL);
   ConfigParameter_descriptor_ = file->message_type(0);
-  static const int ConfigParameter_offsets_[9] = {
+  static const int ConfigParameter_offsets_[10] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ConfigParameter, model_file_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ConfigParameter, tech_node_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ConfigParameter, bit_width_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ConfigParameter, memory_type_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ConfigParameter, reset_period_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ConfigParameter, sim_period_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ConfigParameter, clk_freq_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ConfigParameter, append_buffer_capacity_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ConfigParameter, pixel_inference_rate_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ConfigParameter, trace_file_),
@@ -88,15 +89,15 @@ void protobuf_AddDesc_config_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-    "\n\014config.proto\022\006config\"\263\002\n\017ConfigParamet"
+    "\n\014config.proto\022\006config\"\310\002\n\017ConfigParamet"
     "er\022\022\n\nmodel_file\030\001 \002(\t\022\025\n\ttech_node\030\002 \001("
     "\005:\00228\022\021\n\tbit_width\030\003 \002(\005\022<\n\013memory_type\030"
-    "\005 \001(\0162\".config.ConfigParameter.MemoryTyp"
-    "e:\003ROM\022\024\n\014reset_period\030\006 \002(\005\022\022\n\nsim_peri"
-    "od\030\007 \002(\005\022!\n\026append_buffer_capacity\030\010 \001(\005"
-    ":\0010\022!\n\024pixel_inference_rate\030\t \001(\005:\003100\022\024"
-    "\n\ntrace_file\030\n \001(\t:\000\"\036\n\nMemoryType\022\007\n\003RO"
-    "M\020\000\022\007\n\003RAM\020\001", 332);
+    "\004 \001(\0162\".config.ConfigParameter.MemoryTyp"
+    "e:\003ROM\022\024\n\014reset_period\030\005 \002(\005\022\022\n\nsim_peri"
+    "od\030\006 \002(\005\022\023\n\010clk_freq\030\007 \001(\001:\0011\022!\n\026append_"
+    "buffer_capacity\030\010 \001(\005:\0010\022!\n\024pixel_infere"
+    "nce_rate\030\t \001(\005:\003100\022\024\n\ntrace_file\030\n \001(\t:"
+    "\000\"\036\n\nMemoryType\022\007\n\003ROM\020\000\022\007\n\003RAM\020\001", 353);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "config.proto", &protobuf_RegisterTypes);
   ConfigParameter::default_instance_ = new ConfigParameter();
@@ -141,6 +142,7 @@ const int ConfigParameter::kBitWidthFieldNumber;
 const int ConfigParameter::kMemoryTypeFieldNumber;
 const int ConfigParameter::kResetPeriodFieldNumber;
 const int ConfigParameter::kSimPeriodFieldNumber;
+const int ConfigParameter::kClkFreqFieldNumber;
 const int ConfigParameter::kAppendBufferCapacityFieldNumber;
 const int ConfigParameter::kPixelInferenceRateFieldNumber;
 const int ConfigParameter::kTraceFileFieldNumber;
@@ -171,6 +173,7 @@ void ConfigParameter::SharedCtor() {
   memory_type_ = 0;
   reset_period_ = 0;
   sim_period_ = 0;
+  clk_freq_ = 1;
   append_buffer_capacity_ = 0;
   pixel_inference_rate_ = 100;
   trace_file_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
@@ -226,18 +229,22 @@ void ConfigParameter::Clear() {
   } while (0)
 
   if (_has_bits_[0 / 32] & 255) {
-    ZR_(bit_width_, append_buffer_capacity_);
+    ZR_(bit_width_, reset_period_);
+    ZR_(sim_period_, append_buffer_capacity_);
     if (has_model_file()) {
       if (model_file_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
         model_file_->clear();
       }
     }
     tech_node_ = 28;
-    pixel_inference_rate_ = 100;
+    clk_freq_ = 1;
   }
-  if (has_trace_file()) {
-    if (trace_file_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-      trace_file_->clear();
+  if (_has_bits_[8 / 32] & 768) {
+    pixel_inference_rate_ = 100;
+    if (has_trace_file()) {
+      if (trace_file_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+        trace_file_->clear();
+      }
     }
   }
 
@@ -300,13 +307,13 @@ bool ConfigParameter::MergePartialFromCodedStream(
         } else {
           goto handle_unusual;
         }
-        if (input->ExpectTag(40)) goto parse_memory_type;
+        if (input->ExpectTag(32)) goto parse_memory_type;
         break;
       }
 
-      // optional .config.ConfigParameter.MemoryType memory_type = 5 [default = ROM];
-      case 5: {
-        if (tag == 40) {
+      // optional .config.ConfigParameter.MemoryType memory_type = 4 [default = ROM];
+      case 4: {
+        if (tag == 32) {
          parse_memory_type:
           int value;
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
@@ -315,18 +322,18 @@ bool ConfigParameter::MergePartialFromCodedStream(
           if (::config::ConfigParameter_MemoryType_IsValid(value)) {
             set_memory_type(static_cast< ::config::ConfigParameter_MemoryType >(value));
           } else {
-            mutable_unknown_fields()->AddVarint(5, value);
+            mutable_unknown_fields()->AddVarint(4, value);
           }
         } else {
           goto handle_unusual;
         }
-        if (input->ExpectTag(48)) goto parse_reset_period;
+        if (input->ExpectTag(40)) goto parse_reset_period;
         break;
       }
 
-      // required int32 reset_period = 6;
-      case 6: {
-        if (tag == 48) {
+      // required int32 reset_period = 5;
+      case 5: {
+        if (tag == 40) {
          parse_reset_period:
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
@@ -335,18 +342,33 @@ bool ConfigParameter::MergePartialFromCodedStream(
         } else {
           goto handle_unusual;
         }
-        if (input->ExpectTag(56)) goto parse_sim_period;
+        if (input->ExpectTag(48)) goto parse_sim_period;
         break;
       }
 
-      // required int32 sim_period = 7;
-      case 7: {
-        if (tag == 56) {
+      // required int32 sim_period = 6;
+      case 6: {
+        if (tag == 48) {
          parse_sim_period:
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
                  input, &sim_period_)));
           set_has_sim_period();
+        } else {
+          goto handle_unusual;
+        }
+        if (input->ExpectTag(57)) goto parse_clk_freq;
+        break;
+      }
+
+      // optional double clk_freq = 7 [default = 1];
+      case 7: {
+        if (tag == 57) {
+         parse_clk_freq:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   double, ::google::protobuf::internal::WireFormatLite::TYPE_DOUBLE>(
+                 input, &clk_freq_)));
+          set_has_clk_freq();
         } else {
           goto handle_unusual;
         }
@@ -446,20 +468,25 @@ void ConfigParameter::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::WriteInt32(3, this->bit_width(), output);
   }
 
-  // optional .config.ConfigParameter.MemoryType memory_type = 5 [default = ROM];
+  // optional .config.ConfigParameter.MemoryType memory_type = 4 [default = ROM];
   if (has_memory_type()) {
     ::google::protobuf::internal::WireFormatLite::WriteEnum(
-      5, this->memory_type(), output);
+      4, this->memory_type(), output);
   }
 
-  // required int32 reset_period = 6;
+  // required int32 reset_period = 5;
   if (has_reset_period()) {
-    ::google::protobuf::internal::WireFormatLite::WriteInt32(6, this->reset_period(), output);
+    ::google::protobuf::internal::WireFormatLite::WriteInt32(5, this->reset_period(), output);
   }
 
-  // required int32 sim_period = 7;
+  // required int32 sim_period = 6;
   if (has_sim_period()) {
-    ::google::protobuf::internal::WireFormatLite::WriteInt32(7, this->sim_period(), output);
+    ::google::protobuf::internal::WireFormatLite::WriteInt32(6, this->sim_period(), output);
+  }
+
+  // optional double clk_freq = 7 [default = 1];
+  if (has_clk_freq()) {
+    ::google::protobuf::internal::WireFormatLite::WriteDouble(7, this->clk_freq(), output);
   }
 
   // optional int32 append_buffer_capacity = 8 [default = 0];
@@ -513,20 +540,25 @@ void ConfigParameter::SerializeWithCachedSizes(
     target = ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(3, this->bit_width(), target);
   }
 
-  // optional .config.ConfigParameter.MemoryType memory_type = 5 [default = ROM];
+  // optional .config.ConfigParameter.MemoryType memory_type = 4 [default = ROM];
   if (has_memory_type()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteEnumToArray(
-      5, this->memory_type(), target);
+      4, this->memory_type(), target);
   }
 
-  // required int32 reset_period = 6;
+  // required int32 reset_period = 5;
   if (has_reset_period()) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(6, this->reset_period(), target);
+    target = ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(5, this->reset_period(), target);
   }
 
-  // required int32 sim_period = 7;
+  // required int32 sim_period = 6;
   if (has_sim_period()) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(7, this->sim_period(), target);
+    target = ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(6, this->sim_period(), target);
+  }
+
+  // optional double clk_freq = 7 [default = 1];
+  if (has_clk_freq()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteDoubleToArray(7, this->clk_freq(), target);
   }
 
   // optional int32 append_buffer_capacity = 8 [default = 0];
@@ -583,24 +615,29 @@ int ConfigParameter::ByteSize() const {
           this->bit_width());
     }
 
-    // optional .config.ConfigParameter.MemoryType memory_type = 5 [default = ROM];
+    // optional .config.ConfigParameter.MemoryType memory_type = 4 [default = ROM];
     if (has_memory_type()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::EnumSize(this->memory_type());
     }
 
-    // required int32 reset_period = 6;
+    // required int32 reset_period = 5;
     if (has_reset_period()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::Int32Size(
           this->reset_period());
     }
 
-    // required int32 sim_period = 7;
+    // required int32 sim_period = 6;
     if (has_sim_period()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::Int32Size(
           this->sim_period());
+    }
+
+    // optional double clk_freq = 7 [default = 1];
+    if (has_clk_freq()) {
+      total_size += 1 + 8;
     }
 
     // optional int32 append_buffer_capacity = 8 [default = 0];
@@ -610,6 +647,8 @@ int ConfigParameter::ByteSize() const {
           this->append_buffer_capacity());
     }
 
+  }
+  if (_has_bits_[8 / 32] & (0xffu << (8 % 32))) {
     // optional int32 pixel_inference_rate = 9 [default = 100];
     if (has_pixel_inference_rate()) {
       total_size += 1 +
@@ -617,8 +656,6 @@ int ConfigParameter::ByteSize() const {
           this->pixel_inference_rate());
     }
 
-  }
-  if (_has_bits_[8 / 32] & (0xffu << (8 % 32))) {
     // optional string trace_file = 10 [default = ""];
     if (has_trace_file()) {
       total_size += 1 +
@@ -671,14 +708,17 @@ void ConfigParameter::MergeFrom(const ConfigParameter& from) {
     if (from.has_sim_period()) {
       set_sim_period(from.sim_period());
     }
+    if (from.has_clk_freq()) {
+      set_clk_freq(from.clk_freq());
+    }
     if (from.has_append_buffer_capacity()) {
       set_append_buffer_capacity(from.append_buffer_capacity());
     }
+  }
+  if (from._has_bits_[8 / 32] & (0xffu << (8 % 32))) {
     if (from.has_pixel_inference_rate()) {
       set_pixel_inference_rate(from.pixel_inference_rate());
     }
-  }
-  if (from._has_bits_[8 / 32] & (0xffu << (8 % 32))) {
     if (from.has_trace_file()) {
       set_trace_file(from.trace_file());
     }
@@ -712,6 +752,7 @@ void ConfigParameter::Swap(ConfigParameter* other) {
     std::swap(memory_type_, other->memory_type_);
     std::swap(reset_period_, other->reset_period_);
     std::swap(sim_period_, other->sim_period_);
+    std::swap(clk_freq_, other->clk_freq_);
     std::swap(append_buffer_capacity_, other->append_buffer_capacity_);
     std::swap(pixel_inference_rate_, other->pixel_inference_rate_);
     std::swap(trace_file_, other->trace_file_);

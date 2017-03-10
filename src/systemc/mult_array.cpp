@@ -14,7 +14,7 @@ using namespace std;
  * Allocates the input & output data port of the multiplier array.
  */
 MultArray::MultArray(sc_module_name module_name, int Kh, int Kw, int Pin,
-    int Pout, int bit_width, int tech_node)
+    int Pout, int bit_width, int tech_node, double clk_freq)
   : sc_module(module_name), Kh_(Kh), Kw_(Kw), Pin_(Pin), Pout_(Pout) {
     // the input data valid signal w.r.t. each input sliding window
     mult_array_in_valid = new sc_in<bool>[Pout_*Pin_];
@@ -27,7 +27,7 @@ MultArray::MultArray(sc_module_name module_name, int Kh, int Kw, int Pin,
     sensitive << clock.pos() << reset;
 
     // one multiplier model
-    mult_model_ = new MultModel(bit_width, tech_node);
+    mult_model_ = new MultModel(bit_width, tech_node, clk_freq);
     dynamic_energy_ = 0.;
 }
 

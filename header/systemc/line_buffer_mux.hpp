@@ -34,7 +34,7 @@ class LineBufferMux : public sc_module {
   public:
     // constructor
     explicit LineBufferMux(sc_module_name module_name, int Kh, int Kw, int Nin,
-        int Pin, int bit_width=8, int tech_node=28);
+        int Pin, int bit_width=8, int tech_node=28, double clk_freq=1.);
     // destructor
     ~LineBufferMux();
 

@@ -12,7 +12,8 @@ using namespace std;
 using namespace config;
 
 MemoryModel::MemoryModel(int memory_width,  int memory_depth, int tech_node,
-    ConfigParameter_MemoryType memory_type) : Model(tech_node) {
+    ConfigParameter_MemoryType memory_type, double clk_freq) :
+  Model(tech_node, clk_freq) {
   memory_width_ = memory_width;
   memory_depth_ = memory_depth;
   memory_type_ = memory_type;
@@ -57,7 +58,9 @@ double MemoryModel::Area() const {
           0.041*memory_size_;
         return fitted_area > 0 ? fitted_area : 0;
       case ConfigParameter_MemoryType_RAM:
-        return 211. * memory_size_ / 1000. + 3056.;
+        fitted_area = 0.199*memory_depth_ + 165.75*memory_width_ +
+          0.19*memory_size_;
+        return fitted_area > 0 ? fitted_area : 0;
       default:
         cerr << "undefined memory type: " << memory_type_ << endl;
         exit(1);
@@ -85,8 +88,7 @@ double MemoryModel::StaticPower() const {
         fitted_power = 55.076 + 0.0456 * memory_depth_ + 1.198 * memory_width_;
         return fitted_power > 0 ? fitted_power : 0;
       case ConfigParameter_MemoryType_RAM:
-        // TODO
-        fitted_power = 0.001835 * memory_depth_ + 4.904 * memory_width_;
+        fitted_power = -68.11 + 0.017 * memory_depth_ + 5.10 * memory_width_;
         return fitted_power > 0 ? fitted_power : 0;
       default:
         cerr << "undefined memory type: " << memory_type_ << endl;
@@ -118,8 +120,7 @@ double MemoryModel::DynamicEnergyOfReadOperation() const {
         fitted_power = fitted_power * 2 / clk_freq_;
         return fitted_power > 0 ? fitted_power : 0;
       case ConfigParameter_MemoryType_RAM:
-        // TODO
-        fitted_power = 0.1319 * memory_depth_ + 107.44 * memory_width_;
+        fitted_power = -2.25 + 0.04 * memory_depth_ + 120.78 * memory_width_;
         fitted_power = fitted_power * 2 / clk_freq_;
         return fitted_power > 0 ? fitted_power : 0;
       default:
@@ -145,8 +146,7 @@ double MemoryModel::DynamicEnergyOfWriteOperation() const {
         cerr << "write operation to ROM" << endl;
         exit(1);
       case ConfigParameter_MemoryType_RAM:
-        // TODO
-        fitted_power = 0.1185 * memory_depth_ + 120.47 * memory_width_;
+        fitted_power = -89.43 + 0.043 * memory_depth_ + 133.51 * memory_width_;
         fitted_power = fitted_power * 2 / clk_freq_;
         return fitted_power > 0 ? fitted_power : 0;
       default:

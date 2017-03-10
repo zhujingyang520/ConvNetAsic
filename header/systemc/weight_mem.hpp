@@ -42,7 +42,7 @@ class WeightMem : public sc_module {
     explicit WeightMem(sc_module_name module_name, int Kh, int Kw, int Pin,
         int Pout, int Nin, int Nout, config::ConfigParameter_MemoryType
         memory_type=config::ConfigParameter_MemoryType_ROM, int bit_width=8,
-        int tech_node=28);
+        int tech_node=28, double clk_freq=1.);
     // destructor
     ~WeightMem();
 

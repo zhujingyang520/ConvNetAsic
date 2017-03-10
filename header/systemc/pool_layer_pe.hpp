@@ -86,7 +86,7 @@ class PoolLayerPe : public sc_module {
     explicit PoolLayerPe(sc_module_name module_name, int Kh, int Kw, int h,
         int w, int Nin, int Pin, int Pad_h=0, int Pad_w=0, int Stride_h=1,
         int Stride_w=1, PoolArray::PoolMethod pool_method=PoolArray::MAX,
-        int bit_width=8, int tech_node=28);
+        int bit_width=8, int tech_node=28, double clk_freq=1.);
     // destructor
     ~PoolLayerPe();
 

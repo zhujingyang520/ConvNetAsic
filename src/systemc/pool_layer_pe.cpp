@@ -15,7 +15,8 @@ using namespace std;
  */
 PoolLayerPe::PoolLayerPe(sc_module_name module_name, int Kh, int Kw, int h,
     int w, int Nin, int Pin, int Pad_h, int Pad_w, int Stride_h, int Stride_w,
-    PoolArray::PoolMethod pool_method, int bit_width, int tech_node)
+    PoolArray::PoolMethod pool_method, int bit_width, int tech_node,
+    double clk_freq)
   : sc_module(module_name), Nin_(Nin), Pin_(Pin) {
   // pooling layer: same input & output channel depth / parallelism
   const int Nout = Nin;
@@ -54,7 +55,7 @@ PoolLayerPe::PoolLayerPe(sc_module_name module_name, int Kh, int Kw, int h,
 
   // initialize the line buffer arrays
   line_buffer_array_ = new LineBufferArray("line_buffer_array", Kh, Kw,
-      h+2*Pad_h, w+2*Pad_w, Nin, bit_width, tech_node);
+      h+2*Pad_h, w+2*Pad_w, Nin, bit_width, tech_node, clk_freq);
   line_buffer_array_->clock(clock);
   line_buffer_array_->reset(reset);
   line_buffer_array_->input_data_valid(line_buffer_valid_);
@@ -68,7 +69,7 @@ PoolLayerPe::PoolLayerPe(sc_module_name module_name, int Kh, int Kw, int h,
   // initialize the line buffer mux
   sprintf(name, "%s", "line_buffer_mux");
   line_buffer_mux_ = new LineBufferMux(name, Kh, Kw, Nin, Pin, bit_width,
-      tech_node);
+      tech_node, clk_freq);
   line_buffer_mux_->clock(clock);
   line_buffer_mux_->reset(reset);
   line_buffer_mux_->mux_en(line_buffer_mux_en_);
@@ -83,7 +84,7 @@ PoolLayerPe::PoolLayerPe(sc_module_name module_name, int Kh, int Kw, int h,
   // initialize the pooling array (max/avg)
   sprintf(name, "%s", "pool_array");
   pool_array_ = new PoolArray(name, Kh, Kw, Pin, pool_method, bit_width,
-      tech_node);
+      tech_node, clk_freq);
   pool_array_->clock(clock);
   pool_array_->reset(reset);
   pool_array_->pool_array_en(pool_array_en_);
@@ -99,7 +100,8 @@ PoolLayerPe::PoolLayerPe(sc_module_name module_name, int Kh, int Kw, int h,
 
   // initialize the demux output register
   sprintf(name, "%s", "demux_out_reg");
-  demux_out_reg_ = new DemuxOutReg(name, Nout, Pout, bit_width, tech_node);
+  demux_out_reg_ = new DemuxOutReg(name, Nout, Pout, bit_width, tech_node,
+      clk_freq);
   demux_out_reg_->clock(clock);
   demux_out_reg_->reset(reset);
   demux_out_reg_->demux_out_reg_clear(demux_out_reg_clear_);

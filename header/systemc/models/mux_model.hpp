@@ -14,7 +14,8 @@
 class MuxModel : public Model {
   public:
     // constructor: provide the bit width & number of inputs
-    MuxModel(int bit_width, int num_inputs, int tech_node=28);
+    MuxModel(int bit_width, int num_inputs, int tech_node=28,
+        double clk_freq=1.);
     virtual ~MuxModel() {}
 
     // Area & Power Metrics of the Mux

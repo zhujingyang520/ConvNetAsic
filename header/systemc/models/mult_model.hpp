@@ -14,7 +14,7 @@
 class MultModel : public Model {
   public:
     // constructor: provide the multiplier bit width, the technology node [nm]
-    MultModel(int bit_width, int tech_node=28);
+    MultModel(int bit_width, int tech_node=28, double clk_freq=1.);
     // destructor
     virtual ~MultModel() {}
 

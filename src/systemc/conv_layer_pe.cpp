@@ -18,7 +18,7 @@ using namespace config;
 ConvLayerPe::ConvLayerPe(sc_module_name module_name, int Kh, int Kw, int h,
     int w, int Nin, int Nout, int Pin, int Pout, int Pad_h, int Pad_w,
     int Stride_h, int Stride_w, ConfigParameter_MemoryType memory_type,
-    int bit_width, int tech_node)
+    int bit_width, int tech_node, double clk_freq)
   : sc_module(module_name), Nin_(Nin), Nout_(Nout), Pout_(Pout), Pin_(Pin) {
   // allocate the ports and interconnections
   prev_layer_data = new sc_in<Payload> [Nin];
@@ -66,7 +66,7 @@ ConvLayerPe::ConvLayerPe(sc_module_name module_name, int Kh, int Kw, int h,
 
   // initialize the line buffer arrays
   line_buffer_array_ = new LineBufferArray("line_buffer_array", Kh, Kw,
-      h+2*Pad_h, w+2*Pad_w, Nin, bit_width, tech_node);
+      h+2*Pad_h, w+2*Pad_w, Nin, bit_width, tech_node, clk_freq);
   line_buffer_array_->clock(clock);
   line_buffer_array_->reset(reset);
   line_buffer_array_->input_data_valid(line_buffer_valid_);
@@ -80,7 +80,7 @@ ConvLayerPe::ConvLayerPe(sc_module_name module_name, int Kh, int Kw, int h,
   // initialize line buffer mux
   sprintf(name, "%s", "line_buffer_mux");
   line_buffer_mux_ = new LineBufferMux(name, Kh, Kw, Nin, Pin, bit_width,
-      tech_node);
+      tech_node, clk_freq);
   line_buffer_mux_->clock(clock);
   line_buffer_mux_->reset(reset);
   line_buffer_mux_->mux_en(line_buffer_mux_en_);
@@ -95,7 +95,7 @@ ConvLayerPe::ConvLayerPe(sc_module_name module_name, int Kh, int Kw, int h,
   // initialize weight memory
   sprintf(name, "%s", "weight_mem");
   weight_mem_ = new WeightMem(name, Kh, Kw, Pin, Pout, Nin, Nout, memory_type,
-      bit_width, tech_node);
+      bit_width, tech_node, clk_freq);
   weight_mem_->clock(clock);
   weight_mem_->reset(reset);
   weight_mem_->mem_rd_en(weight_mem_rd_en_);
@@ -106,7 +106,8 @@ ConvLayerPe::ConvLayerPe(sc_module_name module_name, int Kh, int Kw, int h,
 
   // initialize multiplier array
   sprintf(name, "%s", "mult_array");
-  mult_array_ = new MultArray(name, Kh, Kw, Pin, Pout, bit_width, tech_node);
+  mult_array_ = new MultArray(name, Kh, Kw, Pin, Pout, bit_width, tech_node,
+      clk_freq);
   mult_array_->clock(clock);
   mult_array_->reset(reset);
   mult_array_->mult_array_en(mult_array_en_);
@@ -125,7 +126,8 @@ ConvLayerPe::ConvLayerPe(sc_module_name module_name, int Kh, int Kw, int h,
 
   // initialize the add array
   sprintf(name, "%s", "add_array");
-  add_array_ = new AddArray(name, Kh, Kw, Pin, Pout, bit_width, tech_node);
+  add_array_ = new AddArray(name, Kh, Kw, Pin, Pout, bit_width, tech_node,
+      clk_freq);
   add_array_->clock(clock);
   add_array_->reset(reset);
   add_array_->add_array_enable(add_array_en_);
@@ -144,7 +146,8 @@ ConvLayerPe::ConvLayerPe(sc_module_name module_name, int Kh, int Kw, int h,
 
   // initialize the demux output register
   sprintf(name, "%s", "demux_out_reg");
-  demux_out_reg_ = new DemuxOutReg(name, Nout, Pout, bit_width, tech_node);
+  demux_out_reg_ = new DemuxOutReg(name, Nout, Pout, bit_width, tech_node,
+      clk_freq);
   demux_out_reg_->clock(clock);
   demux_out_reg_->reset(reset);
   demux_out_reg_->demux_out_reg_clear(demux_out_reg_clear_);

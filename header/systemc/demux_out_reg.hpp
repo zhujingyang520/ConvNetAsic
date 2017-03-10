@@ -33,7 +33,7 @@ class DemuxOutReg : public sc_module {
   public:
     // constructor
     explicit DemuxOutReg(sc_module_name module_name, int Nout, int Pout,
-        int bit_width=8, int tech_node=28);
+        int bit_width=8, int tech_node=28, double clk_freq=1.);
     ~DemuxOutReg();
 
     // main process of the DemuxOutReg

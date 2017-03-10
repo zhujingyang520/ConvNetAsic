@@ -29,8 +29,9 @@ int sc_main (int argc, char **argv) {
     tf = sc_create_vcd_trace_file(cmd_parser.config_param.trace_file().c_str());
   }
 
-  // TODO: hardcode clock period
-  sc_clock clock("clock", 1, SC_NS);
+  // clock frequency [GHz]
+  double clk_freq = cmd_parser.config_param.clk_freq();
+  sc_clock clock("clock", 1./clk_freq, SC_NS);
   sc_signal<bool> reset;
   sc_trace(tf, clock, "clock");
   sc_trace(tf, reset, "reset");
@@ -47,12 +48,12 @@ int sc_main (int argc, char **argv) {
   const int reset_period = cmd_parser.config_param.reset_period();
   cout << "starts reset for " << reset_period << " cycles ..." << endl;
   reset.write(1);
-  sc_start(reset_period, SC_NS);
+  sc_start(reset_period/clk_freq, SC_NS);
   reset.write(0);
 
   const int sim_period = cmd_parser.config_param.sim_period();
   cout << "starts run simulation for " << sim_period << " cycles ..." << endl;
-  sc_start(sim_period, SC_NS);
+  sc_start(sim_period/clk_freq, SC_NS);
 
   // report the statistics of accelerator
   top.ReportStatistics();
@@ -60,7 +61,7 @@ int sc_main (int argc, char **argv) {
   // report the area
   top.ReportAreaBreakdown();
   cout << "####################################################" << endl;
-  cout << "Total Area: " << top.Area() << endl;
+  cout << "Total Area: " << top.Area() << " [um2]" << endl;
   cout << "####################################################" << endl;
 
   // report the power

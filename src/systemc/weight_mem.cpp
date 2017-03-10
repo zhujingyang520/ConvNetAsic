@@ -10,7 +10,7 @@ using namespace config;
 
 WeightMem::WeightMem(sc_module_name module_name, int Kh, int Kw, int Pin,
     int Pout, int Nin, int Nout, ConfigParameter_MemoryType memory_type,
-    int bit_width, int tech_node) :
+    int bit_width, int tech_node, double clk_freq) :
   sc_module(module_name), Kh_(Kh), Kw_(Kw), Pin_(Pin), Pout_(Pout), Nin_(Nin),
   Nout_(Nout) {
     // the memory read data is of width Pout*Pin*Kh*Kw
@@ -36,7 +36,7 @@ WeightMem::WeightMem(sc_module_name module_name, int Kh, int Kw, int Pin,
     const int memory_width = mem_width_ * bit_width;
     const int memory_depth = mem_depth_;
     memory_model_ = new MemoryModel(memory_width, memory_depth, tech_node,
-        memory_type);
+        memory_type, clk_freq);
     dynamic_energy_ = 0.;
   }
 

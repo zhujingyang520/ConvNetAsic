@@ -47,7 +47,7 @@ class LineBufferArray : public sc_module {
   public:
     // constructor
     explicit LineBufferArray(sc_module_name module_name, int Kh, int Kw, int h,
-        int w, int Nin, int bit_width=8, int tech_node=28);
+        int w, int Nin, int bit_width=8, int tech_node=28, double clk_freq=1.);
     ~LineBufferArray();
 
     // dynamic power management

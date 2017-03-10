@@ -31,7 +31,7 @@ class MultArray : public sc_module {
   public:
     // constructor
     explicit MultArray(sc_module_name module_name, int Kh, int Kw, int Pin,
-        int Pout, int bit_width=8, int tech_node=28);
+        int Pout, int bit_width=8, int tech_node=28, double clk_freq=1.);
     // destructor
     ~MultArray();
 
