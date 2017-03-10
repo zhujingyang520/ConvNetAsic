@@ -18,6 +18,8 @@ int sc_main (int argc, char **argv) {
   // parse the inline commands
   CmdParser cmd_parser(argc, argv);
   cmd_parser.Parse();
+  // print the parsed configuration file
+  cmd_parser.ConfigParamSummary();
 
   // parse the network architecture prototxt file
   Net caffe_net(cmd_parser.model_filename);

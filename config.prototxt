@@ -2,8 +2,8 @@
 # basic simulation setting
 # reset and simulation period (in no. of clock cycle)
 reset_period: 10
-#sim_period: 20000000
-sim_period: 200
+sim_period: 20000000
+#sim_period: 2000
 # clock frequency [GHz]
 clk_freq: 1
 
@@ -24,7 +24,7 @@ trace_file: "trace"
 #model_file: "models/googlenet-v1/deploy.prototxt"
 
 ## Inception-v4
-model_file: "models/inception-v4/deploy.prototxt"
+#model_file: "models/inception-v4/deploy.prototxt"
 #model_file: "models/inception-v4/inception_v4_stem.prototxt"
 
 ## ResNet-152
@@ -40,6 +40,7 @@ model_file: "models/inception-v4/deploy.prototxt"
 #model_file: "models/toy_design/toy3.prototxt"
 #model_file: "models/toy_design/toy4.prototxt"
 #model_file: "models/toy_design/toy5.prototxt"
+model_file: "models/toy_design/toy6.prototxt"
 
 ## technology node (default to 28nm)
 tech_node: 28
@@ -54,8 +55,8 @@ bit_width: 8
 memory_type: ROM
 
 # append buffer capacity
-append_buffer_capacity: 10
+append_buffer_capacity: 100
 
 # target pixel inference rate [no. of clock cycle]
-pixel_inference_rate: 100
+pixel_inference_rate: 50
 

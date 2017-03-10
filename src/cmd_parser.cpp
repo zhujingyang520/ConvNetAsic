@@ -78,3 +78,24 @@ void CmdParser::PrintUsage() const {
     << endl;
   exit(0);
 }
+
+void CmdParser::ConfigParamSummary() const {
+  cout << "##################################################" << endl;
+  cout << "# Summary of the parsed configuration parameters #" << endl;
+  cout << "##################################################" << endl;
+  cout << "# clk freq [GHz]: " << config_param.clk_freq() << endl;
+  cout << "# reset cycle: " << config_param.reset_period() << endl;
+  cout << "# sim cycle: " << config_param.sim_period() << endl;
+  cout << "# dumped trace file: " << config_param.trace_file() << endl;
+  cout << "# ConvNet model file: " << config_param.model_file() << endl;
+  cout << "# tech node: " << config_param.tech_node() << endl;
+  cout << "# bit width: " << config_param.bit_width() << endl;
+  const string memory_type = (config_param.memory_type() ==
+    ConfigParameter_MemoryType_RAM) ? "RAM" : "ROM";
+  cout << "# kernel memory type: " << memory_type << endl;
+  cout << "# max buffer capacity: " << config_param.append_buffer_capacity()
+    << endl;
+  cout << "# target inference rate [cycle/pixel]: "
+    << config_param.pixel_inference_rate() << endl;
+  cout << "##################################################" << endl;
+}

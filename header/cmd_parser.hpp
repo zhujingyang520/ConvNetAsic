@@ -22,6 +22,9 @@ class CmdParser {
     // main parse method
     void Parse();
 
+    // print the summary of the configuration parameters
+    void ConfigParamSummary() const;
+
   public:
     // public variables for main program to access
     std::string program_name;     // program name

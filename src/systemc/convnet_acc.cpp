@@ -927,6 +927,8 @@ void ConvNetAcc::InitConvolutionPe(const Net& net, int layer_id) {
     sc_trace(tf_, conv_layer_pe->line_buffer_valid_, name);
     sprintf(name, "%s_line_buffer_zero", layer->layer_param().name().c_str());
     sc_trace(tf_, conv_layer_pe->line_buffer_zero_in_, name);
+    sprintf(name, "%s_line_buffer_mux_en", layer->layer_param().name().c_str());
+    sc_trace(tf_, conv_layer_pe->line_buffer_mux_en_, name);
     sprintf(name, "%s_demux_out_reg_clr", layer->layer_param().name().c_str());
     sc_trace(tf_, conv_layer_pe->demux_out_reg_clear_, name);
     sprintf(name, "%s_demux_out_reg_en", layer->layer_param().name().c_str());

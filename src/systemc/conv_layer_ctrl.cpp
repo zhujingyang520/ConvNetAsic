@@ -167,8 +167,14 @@ void ConvLayerCtrl::ConvLayerCtrlProc() {
     for (int i = 0; i < ceil(static_cast<double>(Nin_)/Pin_); ++i) {
       for (int o = 0; o < ceil(static_cast<double>(Nout_)/Pout_); ++o) {
         // activate the line buffer mux
-        line_buffer_mux_en.write(1);
-        line_buffer_mux_select.write(i);
+        if (o == 0) {
+          line_buffer_mux_en.write(1);
+          line_buffer_mux_select.write(i);
+        } else {
+          // do not require to activate the line buffer mux for the remaining
+          // cycle, save part of the mux power
+          line_buffer_mux_en.write(0);
+        }
         // activate the weight memory access
         weight_mem_rd_en.write(1);
         weight_mem_rd_addr.write(o+i*ceil(static_cast<double>(Nout_)/Pout_));
