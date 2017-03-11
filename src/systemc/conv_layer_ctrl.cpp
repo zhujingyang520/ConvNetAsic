@@ -177,7 +177,8 @@ void ConvLayerCtrl::ConvLayerCtrlProc() {
         }
         // activate the weight memory access
         weight_mem_rd_en.write(1);
-        weight_mem_rd_addr.write(o+i*ceil(static_cast<double>(Nout_)/Pout_));
+        weight_mem_rd_addr.write(o+i*static_cast<int>(ceil(static_cast<double>
+                (Nout_)/Pout_)));
         // first, second: start idx of input feature map & output feature map
         feat_map_loc_ = make_pair(i*Pin_, o*Pout_);
         wait();

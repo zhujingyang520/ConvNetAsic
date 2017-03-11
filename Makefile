@@ -74,6 +74,10 @@ endif
 ####################
 # Compilation rules
 ####################
+all:
+	@echo "SYSTEMC_ROOT enviornment: $(SYSTEMC_ROOT)"
+	make $(PROJECT)
+
 $(PROJECT): $(OBJS)
 	$(CXX) $(LIBDIR) -o $@ $^ $(LDFLAGS)
 

@@ -95,9 +95,9 @@ void ConvNetAcc::InitParallelism(const Net& net, int pixel_inference_rate) {
       const int w = net.top_blobs_shape_ptr_[layer_id][0]->at(3);
       parallelism_[layer_id] = CalculateParallelsim(Nin, Nout, h, w,
           layer_inference_rate);
-      const int inference_rate = (ceil(static_cast<double>(Nin) /
-          parallelism_[layer_id].first) * ceil(static_cast<double>(Nout) /
-            parallelism_[layer_id].second) + pipeline_stage_) * h * w;
+      const int inference_rate = static_cast<int>((ceil(static_cast<double>(Nin)
+            / parallelism_[layer_id].first) * ceil(static_cast<double>(Nout) /
+            parallelism_[layer_id].second) + pipeline_stage_) * h * w);
       if (max_inference_rate < inference_rate) {
         max_inference_rate = inference_rate;
       }
@@ -110,9 +110,9 @@ void ConvNetAcc::InitParallelism(const Net& net, int pixel_inference_rate) {
       const int w = 1;
       parallelism_[layer_id] = CalculateParallelsim(Nin, Nout, h, w,
           layer_inference_rate);
-      const int inference_rate = (ceil(static_cast<double>(Nin) /
-          parallelism_[layer_id].first) * ceil(static_cast<double>(Nout) /
-            parallelism_[layer_id].second) + pipeline_stage_) * h * w;
+      const int inference_rate = static_cast<int>((ceil(static_cast<double>(Nin)
+           / parallelism_[layer_id].first) * ceil(static_cast<double>(Nout) /
+           parallelism_[layer_id].second) + pipeline_stage_) * h * w);
       if (max_inference_rate < inference_rate) {
         max_inference_rate = inference_rate;
       }
@@ -123,8 +123,8 @@ void ConvNetAcc::InitParallelism(const Net& net, int pixel_inference_rate) {
       const int w = net.top_blobs_shape_ptr_[layer_id][0]->at(3);
       parallelism_[layer_id] = CalculateParallelsim(Nin, 0, h, w,
           layer_inference_rate);
-      const int inference_rate = (ceil(static_cast<double>(Nin) /
-          parallelism_[layer_id].first) + pipeline_stage_) * h * w;
+      const int inference_rate = static_cast<int>((ceil(static_cast<double>(Nin)
+          / parallelism_[layer_id].first) + pipeline_stage_) * h * w);
       if (max_inference_rate < inference_rate) {
         max_inference_rate = inference_rate;
       }
@@ -166,8 +166,8 @@ pair<int, int> ConvNetAcc::CalculateParallelsim(int Nin, int Nout, int h, int w,
     if (pixel_inference_rate <= 0) {
       pixel_inference_rate = 1;
     }
-    int Pin = round(static_cast<double>(Nin) /
-        static_cast<double>(pixel_inference_rate));
+    int Pin = static_cast<int>(round(static_cast<double>(Nin) /
+        static_cast<double>(pixel_inference_rate)));
     // regularize the parallelism
     if (Pin <= 0) Pin = 1;
     if (Pin > Nin) Pin = Nin;
@@ -202,11 +202,11 @@ pair<int, int> ConvNetAcc::CalculateParallelsim(int Nin, int Nout, int h, int w,
  *  ceil(Nin/Pin) * ceil(Nout/Pout) = rate
  */
 pair<int, int> ConvNetAcc::CalculateParallelsimBruteForce(int Nin, int Nout,
-    int rate) const {
+    double rate) const {
   int Pin = 1, Pout = 1, min = INT_MAX;
   for (int Pin_ = 1; Pin_ <= Nin; ++Pin_) {
     for (int Pout_ = 1; Pout_ <= Nout; ++Pout_) {
-      int calculated_rate = ceil(static_cast<double>(Nin) / Pin_) *
+      double calculated_rate = ceil(static_cast<double>(Nin) / Pin_) *
         ceil(static_cast<double>(Nout) / Pout_);
       if (abs(calculated_rate - rate) < min) {
         min = abs(calculated_rate - rate);

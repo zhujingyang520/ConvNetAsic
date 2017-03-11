@@ -99,7 +99,7 @@ class ConvNetAcc : public sc_module {
         int layer_inference_rate) const;
     // brute force search of the parallelism of the CONV
     std::pair<int, int> CalculateParallelsimBruteForce(int Nin, int Nout,
-        int rate) const;
+        double rate) const;
 
   private:
     // initialize the modules & interconnections based on the ConvNet

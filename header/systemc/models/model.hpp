@@ -11,7 +11,7 @@ class Model {
   public:
     // constructor
     Model(int tech_node, double clk_freq=1.);
-    ~Model() {}
+    virtual ~Model() {}
 
     // Area model of the hardware
     virtual double Area() const = 0;

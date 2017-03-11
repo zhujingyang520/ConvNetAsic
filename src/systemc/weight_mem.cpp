@@ -19,8 +19,8 @@ WeightMem::WeightMem(sc_module_name module_name, int Kh, int Kw, int Pin,
     // memory with
     mem_width_ = Pout_*Pin_*Kh_*Kw_;
     // memory depth can be inferred from channel depth & parallelism
-    mem_depth_ = ceil(static_cast<double>(Nout_)/Pout_) *
-      ceil(static_cast<double>(Nin_)/Pin_);
+    mem_depth_ = static_cast<int>(ceil(static_cast<double>(Nout_)/Pout_) *
+      ceil(static_cast<double>(Nin_)/Pin_));
 
     // TODO: for now, we simply assume the elements in memory are initialized as
     // full ones
@@ -82,7 +82,7 @@ double WeightMem::DynamicPower() const {
   sc_time clock_period = dynamic_cast<const sc_clock*>(clock.get_interface())->
     period();
   sc_time sim_time = sc_time_stamp();
-  int total_cycles = sim_time / clock_period;
+  double total_cycles = sim_time / clock_period;
   return dynamic_energy_ / total_cycles;
 }
 

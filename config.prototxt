@@ -38,9 +38,9 @@ trace_file: "trace"
 #model_file: "models/toy_design/toy1_1.prototxt"
 #model_file: "models/toy_design/toy2.prototxt"
 #model_file: "models/toy_design/toy3.prototxt"
-#model_file: "models/toy_design/toy4.prototxt"
+model_file: "models/toy_design/toy4.prototxt"
 #model_file: "models/toy_design/toy5.prototxt"
-model_file: "models/toy_design/toy6.prototxt"
+#model_file: "models/toy_design/toy6.prototxt"
 
 ## technology node (default to 28nm)
 tech_node: 28

@@ -21,7 +21,7 @@ LineBufferMux::LineBufferMux(sc_module_name module_name, int Kh, int Kw,
 
     // one mux model: the mux after line buffers is not fully broadcast
     // it only requires to broadcast to one of multiplier array
-    const int num_inputs = ceil(static_cast<double>(Nin)/Pin);
+    const int num_inputs = static_cast<int>(ceil(static_cast<double>(Nin)/Pin));
     mux_model_ = new MuxModel(Kh*Kw*bit_width, num_inputs, tech_node, clk_freq);
     dynamic_energy_ = 0.;
   }
@@ -47,7 +47,8 @@ void LineBufferMux::LineBufferMuxProc() {
       mux_model_->DynamicEnergyOfOneOperation();
 #ifdef DATA_PATH
     // mux is enabled
-    const int mux_select_max = ceil(static_cast<double>(Nin_)/Pin_);
+    const int mux_select_max = static_cast<int>(ceil(static_cast<double>(Nin_) /
+          Pin_));
     // sanity check the select signals
     assert(mux_select.read() >= 0 && mux_select.read() < mux_select_max);
     const int line_buffer_start_idx = mux_select.read()*Pin_*Kh_*Kw_;
@@ -82,7 +83,7 @@ double LineBufferMux::DynamicPower() const {
   sc_time clock_period = dynamic_cast<const sc_clock*>(clock.get_interface())->
     period();
   sc_time sim_time = sc_time_stamp();
-  int total_cycles = sim_time / clock_period;
+  double total_cycles = sim_time / clock_period;
   return dynamic_energy_ / total_cycles;
 }
 

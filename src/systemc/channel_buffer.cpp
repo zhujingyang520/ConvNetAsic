@@ -217,7 +217,7 @@ double ChannelBuffer::DynamicPower() const {
   sc_time clock_period = dynamic_cast<const sc_clock*>(clock.get_interface())->
     period();
   sc_time sim_time = sc_time_stamp();
-  int total_cycles = sim_time / clock_period;
+  double total_cycles = sim_time / clock_period;
   // updated memory depth
   const int memory_width = memory_model_->memory_width();
   const int memory_depth = max_buffer_size_;

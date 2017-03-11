@@ -178,7 +178,7 @@ double PoolArray::DynamicPower() const {
   sc_time clock_period = dynamic_cast<const sc_clock*>(clock.get_interface())->
     period();
   sc_time sim_time = sc_time_stamp();
-  int total_cycles = sim_time / clock_period;
+  double total_cycles = sim_time / clock_period;
   return dynamic_energy_ / total_cycles;
 }
 
