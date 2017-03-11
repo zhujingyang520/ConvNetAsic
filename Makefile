@@ -20,7 +20,7 @@ PROJECT := main
 CXX := g++
 CXXFLAGS := -Wall
 LDFLAGS := -lprotobuf -lsystemc
-INCDIR := -I$(SYSTEMC_ROOT)/include
+INCDIR := -I. -I$(SYSTEMC_ROOT)/include
 LIBDIR := -L$(wildcard $(SYSTEMC_ROOT)/lib-*)
 
 ########################

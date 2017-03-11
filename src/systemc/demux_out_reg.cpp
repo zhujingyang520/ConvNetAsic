@@ -21,7 +21,8 @@ DemuxOutReg::DemuxOutReg(sc_module_name module_name, int Nout, int Pout,
 
     // one demux model: the demux after ALU is not fully broadcast to all the
     // locations in the output registers
-    const int num_outputs = ceil(static_cast<double>(Nout)/Pout);
+    const int num_outputs = static_cast<int>(ceil(static_cast<double>(Nout) /
+          Pout));
     demux_model_ = new DemuxModel(bit_width, num_outputs, tech_node, clk_freq);
     dynamic_energy_ = 0.;
   }
@@ -69,7 +70,7 @@ double DemuxOutReg::DynamicPower() const {
   sc_time clock_period = dynamic_cast<const sc_clock*>(clock.get_interface())->
     period();
   sc_time sim_time = sc_time_stamp();
-  int total_cycles = sim_time / clock_period;
+  double total_cycles = sim_time / clock_period;
   return dynamic_energy_ / total_cycles;
 }
 

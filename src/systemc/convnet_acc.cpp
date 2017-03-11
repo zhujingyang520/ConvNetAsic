@@ -203,7 +203,8 @@ pair<int, int> ConvNetAcc::CalculateParallelsim(int Nin, int Nout, int h, int w,
  */
 pair<int, int> ConvNetAcc::CalculateParallelsimBruteForce(int Nin, int Nout,
     double rate) const {
-  int Pin = 1, Pout = 1, min = INT_MAX;
+  int Pin = 1, Pout = 1;
+  double min = std::numeric_limits<double>::max();
   for (int Pin_ = 1; Pin_ <= Nin; ++Pin_) {
     for (int Pout_ = 1; Pout_ <= Nout; ++Pout_) {
       double calculated_rate = ceil(static_cast<double>(Nin) / Pin_) *

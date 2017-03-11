@@ -58,5 +58,5 @@ memory_type: ROM
 append_buffer_capacity: 100
 
 # target pixel inference rate [no. of clock cycle]
-pixel_inference_rate: 50
+pixel_inference_rate: 10
 
