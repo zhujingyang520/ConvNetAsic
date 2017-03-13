@@ -85,7 +85,7 @@ double MemoryModel::StaticPower() const {
     double fitted_power;
     switch(memory_type_) {
       case ConfigParameter_MemoryType_ROM:
-        fitted_power = 55.076 + 0.0456 * memory_depth_ + 1.198 * memory_width_;
+        fitted_power = 55.076 + 0.00456 * memory_depth_ + 1.198 * memory_width_;
         return fitted_power > 0 ? fitted_power : 0;
       case ConfigParameter_MemoryType_RAM:
         fitted_power = -68.11 + 0.017 * memory_depth_ + 5.10 * memory_width_;

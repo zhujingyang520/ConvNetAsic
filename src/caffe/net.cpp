@@ -360,7 +360,7 @@ int Net::MaxBlobShapeVolume(int start_id, int end_id) const {
   assert((size_t) end_id <= blobs_shape_.size());
 
   int max_volume = 0;
-  size_t max_blob_id;
+  size_t max_blob_id = start_id;
   for (size_t blob_id = start_id; blob_id < (size_t) end_id; ++blob_id) {
     if (BlobShapeVolume(*blobs_shape_[blob_id]) > max_volume) {
       max_volume = BlobShapeVolume(*blobs_shape_[blob_id]);
@@ -379,7 +379,7 @@ int Net::MinBlobShapeVolume(int start_id, int end_id) const {
   assert((size_t) end_id <= blobs_shape_.size());
 
   int min_volume = INT_MAX;
-  size_t min_blob_id;
+  size_t min_blob_id = start_id;
   for (size_t blob_id = start_id; blob_id < (size_t) end_id; ++blob_id) {
     if (BlobShapeVolume(*blobs_shape_[blob_id]) < min_volume) {
       min_volume = BlobShapeVolume(*blobs_shape_[blob_id]);
