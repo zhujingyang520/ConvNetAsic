@@ -40,7 +40,7 @@ class WeightMem : public sc_module {
   public:
     // constructor
     explicit WeightMem(sc_module_name module_name, int Kh, int Kw, int Pin,
-        int Pout, int Nin, int Nout, config::ConfigParameter_MemoryType
+        int Pout, int Pk, int Nin, int Nout, config::ConfigParameter_MemoryType
         memory_type=config::ConfigParameter_MemoryType_ROM, int bit_width=8,
         int tech_node=28, double clk_freq=1.);
     // destructor
@@ -52,6 +52,7 @@ class WeightMem : public sc_module {
   private:
     int Kh_, Kw_;     // spatial dimension of the kernel
     int Pin_, Pout_;  // input parallelism & output parallelism
+    int Pk_;          // kernel parallelism
     int Nin_, Nout_;  // input & output feature map number (channel depth)
     int mem_width_;   // inferred memory depth & width
     int mem_depth_;

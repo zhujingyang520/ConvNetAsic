@@ -8,7 +8,7 @@
 using namespace std;
 
 ConvLayerCtrl::ConvLayerCtrl(sc_module_name module_name, int Kh, int Kw, int h,
-    int w, int Nin, int Nout, int Pin, int Pout, int Pad_h, int Pad_w,
+    int w, int Nin, int Nout, int Pin, int Pout, int Pk, int Pad_h, int Pad_w,
     int Stride_h, int Stride_w, int extra_pipeline_stage)
   : sc_module(module_name) {
   // assign the parameters to the instance variables
@@ -20,6 +20,7 @@ ConvLayerCtrl::ConvLayerCtrl(sc_module_name module_name, int Kh, int Kw, int h,
   Nout_ = Nout;
   Pin_ = Pin;
   Pout_ = Pout;
+  Pk_ = Pk;
   Pad_h_ = Pad_h;
   Pad_w_ = Pad_w;
   Stride_h_ = Stride_h;
@@ -27,7 +28,7 @@ ConvLayerCtrl::ConvLayerCtrl(sc_module_name module_name, int Kh, int Kw, int h,
   extra_pipeline_stage_ = extra_pipeline_stage;
 
   // allocate the ports
-  mult_array_in_valid = new sc_out<bool> [Pout_*Pin_];
+  mult_array_in_valid = new sc_out<bool> [Pout_*Pin_*Pk_];
   add_array_in_valid = new sc_out<bool> [Pout_];
 
   // synchronous to clock & reset
@@ -166,22 +167,29 @@ void ConvLayerCtrl::ConvLayerCtrlProc() {
     demux_out_reg_clear.write(0);
     for (int i = 0; i < ceil(static_cast<double>(Nin_)/Pin_); ++i) {
       for (int o = 0; o < ceil(static_cast<double>(Nout_)/Pout_); ++o) {
-        // activate the line buffer mux
-        if (o == 0) {
-          line_buffer_mux_en.write(1);
-          line_buffer_mux_select.write(i);
-        } else {
-          // do not require to activate the line buffer mux for the remaining
-          // cycle, save part of the mux power
-          line_buffer_mux_en.write(0);
+        // unroll the kernel dimension as well
+        for (int k = 0; k < ceil(static_cast<double>(Kh_*Kw_)/Pk_); ++k) {
+          // activate the line buffer mux
+          if (o == 0 && k == 0) {
+            line_buffer_mux_en.write(1);
+            line_buffer_mux_select.write(i);
+          } else {
+            // do not require to activate the line buffer mux for the remaining
+            // cycle, save part of the mux power
+            line_buffer_mux_en.write(0);
+          }
+          // activate the weight memory access
+          weight_mem_rd_en.write(1);
+          weight_mem_rd_addr.write(static_cast<int>(k +
+                o*ceil(static_cast<double>(Kh_*Kw_)/Pk_) +
+                i*ceil(static_cast<double>(Nout_)/Pout_)*
+                ceil(static_cast<double>(Kh_*Kw_)/Pk_)));
+          // first, second: start idx of input feature map & output feature map
+          feat_map_loc_ = make_pair(i*Pin_, o*Pout_);
+          // kernel location in the total kernel dimension
+          kernel_loc_ = k*Pk_;
+          wait();
         }
-        // activate the weight memory access
-        weight_mem_rd_en.write(1);
-        weight_mem_rd_addr.write(o+i*static_cast<int>(ceil(static_cast<double>
-                (Nout_)/Pout_)));
-        // first, second: start idx of input feature map & output feature map
-        feat_map_loc_ = make_pair(i*Pin_, o*Pout_);
-        wait();
       }
     }
     // deassert all the arithmetic stages
@@ -212,9 +220,10 @@ void ConvLayerCtrl::MultArrayCtrlProc() {
   if (reset.read()) {
     pipeline_flags_[1] = false;
     mult_array_en.write(0);
-    for (int i = 0; i < Pout_*Pin_; ++i) {
+    for (int i = 0; i < Pout_*Pin_*Pk_; ++i) {
       mult_array_in_valid[i].write(0);
     }
+    mult_array_kernel_idx.write(0);
     // clear output feature map index
     out_feat_idx_add_ctrl_ = 0;
   } else if (pipeline_flags_[0]) {
@@ -224,23 +233,34 @@ void ConvLayerCtrl::MultArrayCtrlProc() {
     // read the input & output feature map index
     const int input_feat_start_idx = feat_map_loc_.first;
     const int output_feat_start_idx = feat_map_loc_.second;
+    // read the kernel index
+    const int kernel_start_idx = kernel_loc_;
     // pipeline the output index to out_feat_idx_add_ctrl_
     out_feat_idx_add_ctrl_ = output_feat_start_idx;
+    // pipeline the kernel index to the kernel_loc_add_
+    kernel_loc_add_ = kernel_loc_;
+
+    // write the kernel start index location
+    mult_array_kernel_idx.write(kernel_loc_);
 
     for (int o = 0; o < Pout_; ++o) {
       for (int i = 0; i < Pin_; ++i) {
-        if (input_feat_start_idx + i >= Nin_ ||
-            output_feat_start_idx + o >= Nout_) {
-          mult_array_in_valid[o*Pin_+i].write(0);
-        } else {
-          mult_array_in_valid[o*Pin_+i].write(1);
+        for (int k = 0; k < Pk_; ++k) {
+          if (kernel_start_idx + k >= Kh_*Kw_ ||
+              input_feat_start_idx + i >= Nin_ ||
+              output_feat_start_idx + o >= Nout_) {
+            mult_array_in_valid[o*Pin_*Pk_+i*Pk_+k].write(0);
+          } else {
+            mult_array_in_valid[o*Pin_*Pk_+i*Pk_+k].write(1);
+          }
         }
       }
     }
   } else {
     pipeline_flags_[1] = false;
     mult_array_en.write(0);
-    for (int i = 0; i < Pout_*Pin_; ++i) {
+    mult_array_kernel_idx.write(0);
+    for (int i = 0; i < Pout_*Pin_*Pk_; ++i) {
       mult_array_in_valid[i].write(0);
     }
   }
@@ -253,11 +273,20 @@ void ConvLayerCtrl::AddArrayCtrlProc() {
     for (int i = 0; i < Pout_; ++i) {
       add_array_in_valid[i].write(0);
     }
+    // no accumulate of the kenel & output register
+    add_array_accumulate_kernel.write(0);
+    add_array_accumulate_out_reg.write(0);
     // clear output feature map index
     out_feat_idx_demux_out_ctrl_ = 0;
     add_array_out_reg_select.write(0);
   } else if (pipeline_flags_[1]) {
-    pipeline_flags_[2] = true;
+    if (kernel_loc_add_ + Pk_ >= Kh_*Kw_) {
+      // activate the demux stage only when all the Pout partial results are
+      // calculated
+      pipeline_flags_[2] = true;
+    } else {
+      pipeline_flags_[2] = false;
+    }
     add_array_en.write(1);
 
     // read the output feature map index
@@ -276,6 +305,20 @@ void ConvLayerCtrl::AddArrayCtrlProc() {
         add_array_in_valid[o].write(1);
       }
     }
+
+    // determine the accumulate results
+    if (kernel_loc_add_ + Pk_ >= Kh_*Kw_) {
+      // current kernel index is the last one
+      add_array_accumulate_out_reg.write(1);
+    } else {
+      add_array_accumulate_out_reg.write(0);
+    }
+    if (kernel_loc_add_ == 0) {
+      // current kernel index is the first one
+      add_array_accumulate_kernel.write(0);
+    } else {
+      add_array_accumulate_kernel.write(1);
+    }
   } else {
     pipeline_flags_[2] = false;
     add_array_en.write(0);
@@ -283,6 +326,9 @@ void ConvLayerCtrl::AddArrayCtrlProc() {
       add_array_in_valid[i].write(0);
     }
     add_array_out_reg_select.write(0);
+    // no accumulate of the kenel & output register
+    add_array_accumulate_kernel.write(0);
+    add_array_accumulate_out_reg.write(0);
   }
 }
 

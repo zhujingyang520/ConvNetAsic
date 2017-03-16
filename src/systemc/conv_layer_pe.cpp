@@ -16,19 +16,20 @@ using namespace config;
  * module.
  */
 ConvLayerPe::ConvLayerPe(sc_module_name module_name, int Kh, int Kw, int h,
-    int w, int Nin, int Nout, int Pin, int Pout, int Pad_h, int Pad_w,
+    int w, int Nin, int Nout, int Pin, int Pout, int Pk, int Pad_h, int Pad_w,
     int Stride_h, int Stride_w, ConfigParameter_MemoryType memory_type,
     int bit_width, int tech_node, double clk_freq)
-  : sc_module(module_name), Nin_(Nin), Nout_(Nout), Pout_(Pout), Pin_(Pin) {
+  : sc_module(module_name), Nin_(Nin), Nout_(Nout), Pout_(Pout), Pin_(Pin),
+  Pk_(Pk) {
   // allocate the ports and interconnections
   prev_layer_data = new sc_in<Payload> [Nin];
   next_layer_data = new sc_out<Payload> [Nout];
   line_buffer_in_data_ = new sc_signal<Payload> [Nin];
   line_buffer_out_data_ = new sc_signal<Payload> [Nin*Kh*Kw];
   line_buffer_mux_out_data_ = new sc_signal<Payload> [Pin*Kh*Kw];
-  weight_mem_rd_data_ = new sc_signal<Payload> [Pout*Pin*Kh*Kw];
-  mult_array_in_valid_ = new sc_signal<bool> [Pout*Pin];
-  mult_array_out_data_ = new sc_signal<Payload> [Pout*Pin*Kh*Kw];
+  weight_mem_rd_data_ = new sc_signal<Payload> [Pout*Pin*Pk];
+  mult_array_in_valid_ = new sc_signal<bool> [Pout*Pin*Pk];
+  mult_array_out_data_ = new sc_signal<Payload> [Pout*Pin*Pk];
   add_array_in_valid_ = new sc_signal<bool> [Pout];
   add_array_reg_in_data_ = new sc_signal<Payload> [Pout];
   add_array_out_data_ = new sc_signal<Payload> [Pout];
@@ -38,7 +39,7 @@ ConvLayerPe::ConvLayerPe(sc_module_name module_name, int Kh, int Kw, int h,
   // initialize the FSM controller
   sprintf(name, "%s", "controller");
   conv_layer_ctrl_ = new ConvLayerCtrl(name, Kh, Kw, h, w, Nin, Nout, Pin,
-      Pout, Pad_h, Pad_w, Stride_h, Stride_w);
+      Pout, Pk, Pad_h, Pad_w, Stride_h, Stride_w);
   conv_layer_ctrl_->clock(clock);
   conv_layer_ctrl_->reset(reset);
   conv_layer_ctrl_->prev_layer_valid(prev_layer_valid);
@@ -52,13 +53,16 @@ ConvLayerPe::ConvLayerPe(sc_module_name module_name, int Kh, int Kw, int h,
   conv_layer_ctrl_->weight_mem_rd_en(weight_mem_rd_en_);
   conv_layer_ctrl_->weight_mem_rd_addr(weight_mem_rd_addr_);
   conv_layer_ctrl_->mult_array_en(mult_array_en_);
-  for (int i = 0; i < Pout*Pin; ++i) {
+  conv_layer_ctrl_->mult_array_kernel_idx(mult_array_kernel_idx_);
+  for (int i = 0; i < Pout*Pin*Pk; ++i) {
     conv_layer_ctrl_->mult_array_in_valid[i](mult_array_in_valid_[i]);
   }
   conv_layer_ctrl_->add_array_en(add_array_en_);
   for (int i = 0; i < Pout; ++i) {
     conv_layer_ctrl_->add_array_in_valid[i](add_array_in_valid_[i]);
   }
+  conv_layer_ctrl_->add_array_accumulate_kernel(add_array_accumulate_kernel_);
+  conv_layer_ctrl_->add_array_accumulate_out_reg(add_array_accumulate_out_reg_);
   conv_layer_ctrl_->add_array_out_reg_select(add_array_out_reg_select_);
   conv_layer_ctrl_->demux_out_reg_clear(demux_out_reg_clear_);
   conv_layer_ctrl_->demux_out_reg_enable(demux_out_reg_enable_);
@@ -94,39 +98,40 @@ ConvLayerPe::ConvLayerPe(sc_module_name module_name, int Kh, int Kw, int h,
 
   // initialize weight memory
   sprintf(name, "%s", "weight_mem");
-  weight_mem_ = new WeightMem(name, Kh, Kw, Pin, Pout, Nin, Nout, memory_type,
-      bit_width, tech_node, clk_freq);
+  weight_mem_ = new WeightMem(name, Kh, Kw, Pin, Pout, Pk, Nin, Nout,
+      memory_type, bit_width, tech_node, clk_freq);
   weight_mem_->clock(clock);
   weight_mem_->reset(reset);
   weight_mem_->mem_rd_en(weight_mem_rd_en_);
   weight_mem_->mem_rd_addr(weight_mem_rd_addr_);
-  for (int i = 0; i < Pout*Pin*Kh*Kw; ++i) {
+  for (int i = 0; i < Pout*Pin*Pk; ++i) {
     weight_mem_->mem_rd_data[i](weight_mem_rd_data_[i]);
   }
 
   // initialize multiplier array
   sprintf(name, "%s", "mult_array");
-  mult_array_ = new MultArray(name, Kh, Kw, Pin, Pout, bit_width, tech_node,
+  mult_array_ = new MultArray(name, Kh, Kw, Pin, Pout, Pk, bit_width, tech_node,
       clk_freq);
   mult_array_->clock(clock);
   mult_array_->reset(reset);
   mult_array_->mult_array_en(mult_array_en_);
-  for (int i = 0; i < Pout*Pin; ++i) {
+  mult_array_->mult_array_kernel_idx(mult_array_kernel_idx_);
+  for (int i = 0; i < Pout*Pin*Pk; ++i) {
     mult_array_->mult_array_in_valid[i](mult_array_in_valid_[i]);
   }
   for (int i = 0; i < Pin*Kh*Kw; ++i) {
     mult_array_->mult_array_act_in_data[i](line_buffer_mux_out_data_[i]);
   }
-  for (int i = 0; i < Pout*Pin*Kh*Kw; ++i) {
+  for (int i = 0; i < Pout*Pin*Pk; ++i) {
     mult_array_->mult_array_weight_in_data[i](weight_mem_rd_data_[i]);
   }
-  for (int i = 0; i < Pout*Pin*Kh*Kw; ++i) {
+  for (int i = 0; i < Pout*Pin*Pk; ++i) {
     mult_array_->mult_array_output_data[i](mult_array_out_data_[i]);
   }
 
   // initialize the add array
   sprintf(name, "%s", "add_array");
-  add_array_ = new AddArray(name, Kh, Kw, Pin, Pout, bit_width, tech_node,
+  add_array_ = new AddArray(name, Kh, Kw, Pin, Pout, Pk, bit_width, tech_node,
       clk_freq);
   add_array_->clock(clock);
   add_array_->reset(reset);
@@ -134,7 +139,9 @@ ConvLayerPe::ConvLayerPe(sc_module_name module_name, int Kh, int Kw, int h,
   for (int i = 0; i < Pout; ++i) {
     add_array_->add_array_in_valid[i](add_array_in_valid_[i]);
   }
-  for (int i = 0; i < Pout*Pin*Kh*Kw; ++i) {
+  add_array_->add_array_accumulate_kernel(add_array_accumulate_kernel_);
+  add_array_->add_array_accumulate_out_reg(add_array_accumulate_out_reg_);
+  for (int i = 0; i < Pout*Pin*Pk; ++i) {
     add_array_->add_array_mult_in_data[i](mult_array_out_data_[i]);
   }
   for (int i = 0; i < Pout; ++i) {

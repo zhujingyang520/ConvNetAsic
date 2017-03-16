@@ -2,8 +2,8 @@
 # basic simulation setting
 # reset and simulation period (in no. of clock cycle)
 reset_period: 10
-sim_period: 20000000
-#sim_period: 2000
+#sim_period: 20000000
+sim_period: 200000
 # clock frequency [GHz]
 clk_freq: 1
 
@@ -35,10 +35,10 @@ trace_file: "trace"
 
 # toy design
 #model_file: "models/toy_design/toy1.prototxt"
-#model_file: "models/toy_design/toy1_1.prototxt"
+model_file: "models/toy_design/toy1_1.prototxt"
 #model_file: "models/toy_design/toy2.prototxt"
 #model_file: "models/toy_design/toy3.prototxt"
-model_file: "models/toy_design/toy4.prototxt"
+#model_file: "models/toy_design/toy4.prototxt"
 #model_file: "models/toy_design/toy5.prototxt"
 #model_file: "models/toy_design/toy6.prototxt"
 

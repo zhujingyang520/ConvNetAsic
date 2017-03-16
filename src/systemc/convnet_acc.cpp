@@ -91,13 +91,17 @@ void ConvNetAcc::InitParallelism(const Net& net, int pixel_inference_rate) {
       const int Nin = dynamic_cast<const ConvolutionLayer*>(layer)->num_input_;
       const int Nout = dynamic_cast<const ConvolutionLayer*>(layer)->
         num_output_;
+      const int Kh = dynamic_cast<const ConvolutionLayer*>(layer)->kh_;
+      const int Kw = dynamic_cast<const ConvolutionLayer*>(layer)->kw_;
       const int h = net.top_blobs_shape_ptr_[layer_id][0]->at(2);
       const int w = net.top_blobs_shape_ptr_[layer_id][0]->at(3);
-      parallelism_[layer_id] = CalculateParallelsim(Nin, Nout, h, w,
+      parallelism_[layer_id] = CalculateParallelsim(Nin, Nout, Kh, Kw, h, w,
           layer_inference_rate);
-      const int inference_rate = static_cast<int>((ceil(static_cast<double>(Nin)
-            / parallelism_[layer_id].first) * ceil(static_cast<double>(Nout) /
-            parallelism_[layer_id].second) + pipeline_stage_) * h * w);
+      const int inference_rate = static_cast<int>(
+          (ceil(static_cast<double>(Nin)/parallelism_[layer_id].first.first) *
+           ceil(static_cast<double>(Nout)/parallelism_[layer_id].first.second) *
+           ceil(static_cast<double>(Kh*Kw)/parallelism_[layer_id].second) +
+           pipeline_stage_) * h * w);
       if (max_inference_rate < inference_rate) {
         max_inference_rate = inference_rate;
       }
@@ -106,13 +110,25 @@ void ConvNetAcc::InitParallelism(const Net& net, int pixel_inference_rate) {
       const int Nin = net.bottom_blobs_shape_ptr_[layer_id][0]->at(1);
       const int Nout = dynamic_cast<const InnerProductLayer*>(layer)->
         num_output_;
+      int Kh, Kw;
+      if (net.bottom_blobs_shape_ptr_[layer_id][0]->size() == 4) {
+        Kh = net.bottom_blobs_shape_ptr_[layer_id][0]->at(2);
+        Kw = net.bottom_blobs_shape_ptr_[layer_id][0]->at(3);
+      } else if (net.bottom_blobs_shape_ptr_[layer_id][0]->size() == 2) {
+        Kh = Kw = 1;
+      } else {
+        cerr << "unexpected bottom blob dimension for FC layer" << endl;
+        exit(1);
+      }
       const int h = 1;
       const int w = 1;
-      parallelism_[layer_id] = CalculateParallelsim(Nin, Nout, h, w,
+      parallelism_[layer_id] = CalculateParallelsim(Nin, Nout, Kh, Kw, h, w,
           layer_inference_rate);
-      const int inference_rate = static_cast<int>((ceil(static_cast<double>(Nin)
-           / parallelism_[layer_id].first) * ceil(static_cast<double>(Nout) /
-           parallelism_[layer_id].second) + pipeline_stage_) * h * w);
+      const int inference_rate = static_cast<int>(
+          (ceil(static_cast<double>(Nin)/parallelism_[layer_id].first.first) *
+           ceil(static_cast<double>(Nout)/parallelism_[layer_id].first.second) *
+           ceil(static_cast<double>(Kh*Kw)/parallelism_[layer_id].second) +
+           pipeline_stage_) * h * w);
       if (max_inference_rate < inference_rate) {
         max_inference_rate = inference_rate;
       }
@@ -121,10 +137,13 @@ void ConvNetAcc::InitParallelism(const Net& net, int pixel_inference_rate) {
       const int Nin = dynamic_cast<const PoolingLayer*>(layer)->num_input_;
       const int h = net.top_blobs_shape_ptr_[layer_id][0]->at(2);
       const int w = net.top_blobs_shape_ptr_[layer_id][0]->at(3);
-      parallelism_[layer_id] = CalculateParallelsim(Nin, 0, h, w,
+      // no kernel unrolling for pooling layer
+      const int Kh = 0;
+      const int Kw = 0;
+      parallelism_[layer_id] = CalculateParallelsim(Nin, 0, Kh, Kw, h, w,
           layer_inference_rate);
       const int inference_rate = static_cast<int>((ceil(static_cast<double>(Nin)
-          / parallelism_[layer_id].first) + pipeline_stage_) * h * w);
+          / parallelism_[layer_id].first.first) + pipeline_stage_) * h * w);
       if (max_inference_rate < inference_rate) {
         max_inference_rate = inference_rate;
       }
@@ -134,8 +153,10 @@ void ConvNetAcc::InitParallelism(const Net& net, int pixel_inference_rate) {
       // for such layers
       continue;
     }
-    cout << "- set " << layer_name << " Pin: " << parallelism_[layer_id].first
-      << " Pout: " << parallelism_[layer_id].second << endl;
+    cout << "- set " << layer_name << " Pin: "
+      << parallelism_[layer_id].first.first << " Pout: "
+      << parallelism_[layer_id].first.second << " Pk: "
+      << parallelism_[layer_id].second << endl;
   }
 
   cout << "################################" << endl;
@@ -152,8 +173,8 @@ void ConvNetAcc::InitParallelism(const Net& net, int pixel_inference_rate) {
   cin.get();
 }
 
-pair<int, int> ConvNetAcc::CalculateParallelsim(int Nin, int Nout, int h, int w,
-    int layer_inference_rate) const {
+pair<pair<int, int>, int> ConvNetAcc::CalculateParallelsim(int Nin, int Nout,
+    int Kh, int Kw, int h, int w, int layer_inference_rate) const {
   // regularize the layer_inference_rate
   if (layer_inference_rate <= 0) {
     layer_inference_rate = 1;
@@ -171,7 +192,7 @@ pair<int, int> ConvNetAcc::CalculateParallelsim(int Nin, int Nout, int h, int w,
     // regularize the parallelism
     if (Pin <= 0) Pin = 1;
     if (Pin > Nin) Pin = Nin;
-    return make_pair(Pin, 0);
+    return make_pair(make_pair(Pin, 0), 0);
   } else {
     // CONV or FC: inference rate = Nin * Nout / Pin / Pout + pipeline_stage
     double pixel_inference_rate = static_cast<double>(layer_inference_rate) /
@@ -189,7 +210,8 @@ pair<int, int> ConvNetAcc::CalculateParallelsim(int Nin, int Nout, int h, int w,
     if (Pout <= 0) Pout = 1;
     if (Pout > Nout) Pout = Nout;
     return make_pair(Pin, Pout);*/
-    return CalculateParallelsimBruteForce(Nin, Nout, pixel_inference_rate);
+    return CalculateParallelsimBruteForce(Nin, Nout, Kh, Kw,
+        pixel_inference_rate);
   }
 }
 
@@ -201,22 +223,26 @@ pair<int, int> ConvNetAcc::CalculateParallelsim(int Nin, int Nout, int h, int w,
  *
  *  ceil(Nin/Pin) * ceil(Nout/Pout) = rate
  */
-pair<int, int> ConvNetAcc::CalculateParallelsimBruteForce(int Nin, int Nout,
-    double rate) const {
-  int Pin = 1, Pout = 1;
+pair<pair<int, int>, int> ConvNetAcc::CalculateParallelsimBruteForce(int Nin,
+    int Nout, int Kh, int Kw, double rate) const {
+  int Pin = 1, Pout = 1, Pk = 1;
   double min = std::numeric_limits<double>::max();
   for (int Pin_ = 1; Pin_ <= Nin; ++Pin_) {
     for (int Pout_ = 1; Pout_ <= Nout; ++Pout_) {
-      double calculated_rate = ceil(static_cast<double>(Nin) / Pin_) *
-        ceil(static_cast<double>(Nout) / Pout_);
-      if (abs(calculated_rate - rate) < min) {
-        min = abs(calculated_rate - rate);
-        Pin = Pin_;
-        Pout = Pout_;
+      for (int Pk_ = 1; Pk_ <= Kh*Kw; ++Pk_) {
+        double calculated_rate = ceil(static_cast<double>(Nin) / Pin_) *
+          ceil(static_cast<double>(Nout) / Pout_) *
+          ceil(static_cast<double>(Kh*Kw) / Pk_);
+        if (abs(calculated_rate - rate) < min) {
+          min = abs(calculated_rate - rate);
+          Pin = Pin_;
+          Pout = Pout_;
+          Pk = Pk_;
+        }
       }
     }
   }
-  return make_pair(Pin, Pout);
+  return make_pair(make_pair(Pin, Pout), Pk);
 }
 
 /*
@@ -365,7 +391,7 @@ void ConvNetAcc::InitPoolingPe(const Net& net, int layer_id) {
   }
   //const int Pin = Nin;
   //const int Pin = 1;
-  const int Pin = parallelism_[layer_id].first;
+  const int Pin = parallelism_[layer_id].first.first;
 
   // allocate the new PoolLayerPe
   PoolLayerPe* pool_layer_pe = new PoolLayerPe(module_name, Kh, Kw, h, w, Nin,
@@ -484,12 +510,13 @@ void ConvNetAcc::InitInnerProductLayer(const Net& net, int layer_id) {
   //const int Pout = Nout;
   //const int Pin = 1;
   //const int Pout = 1;
-  const int Pin = parallelism_[layer_id].first;
-  const int Pout = parallelism_[layer_id].second;
+  const int Pin = parallelism_[layer_id].first.first;
+  const int Pout = parallelism_[layer_id].first.second;
+  const int Pk = parallelism_[layer_id].second;
 
   // allocate the new ConvLayerPe
   ConvLayerPe* fc_layer_pe = new ConvLayerPe(module_name, Kh, Kw, h, w, Nin,
-      Nout, Pin, Pout, Pad_h, Pad_w, Stride_h, Stride_w, memory_type_,
+      Nout, Pin, Pout, Pk, Pad_h, Pad_w, Stride_h, Stride_w, memory_type_,
       bit_width_, tech_node_, clk_freq_);
   conv_layer_pe_.push_back(fc_layer_pe);
   // make the connections
@@ -870,12 +897,13 @@ void ConvNetAcc::InitConvolutionPe(const Net& net, int layer_id) {
   //const int Pout = Nout;
   //const int Pin = 1;
   //const int Pout = 1;
-  const int Pin = parallelism_[layer_id].first;
-  const int Pout = parallelism_[layer_id].second;
+  const int Pin = parallelism_[layer_id].first.first;
+  const int Pout = parallelism_[layer_id].first.second;
+  const int Pk = parallelism_[layer_id].second;
 
   // allocate the new ConvLayerPe
   ConvLayerPe* conv_layer_pe = new ConvLayerPe(module_name, Kh, Kw, h, w, Nin,
-      Nout, Pin, Pout, Pad_h, Pad_w, Stride_h, Stride_w, memory_type_,
+      Nout, Pin, Pout, Pk, Pad_h, Pad_w, Stride_h, Stride_w, memory_type_,
       bit_width_, tech_node_, clk_freq_);
   conv_layer_pe_.push_back(conv_layer_pe);
   // make the connections
@@ -930,6 +958,10 @@ void ConvNetAcc::InitConvolutionPe(const Net& net, int layer_id) {
     sc_trace(tf_, conv_layer_pe->line_buffer_zero_in_, name);
     sprintf(name, "%s_line_buffer_mux_en", layer->layer_param().name().c_str());
     sc_trace(tf_, conv_layer_pe->line_buffer_mux_en_, name);
+    sprintf(name, "%s_mult_array_en", layer->layer_param().name().c_str());
+    sc_trace(tf_, conv_layer_pe->mult_array_en_, name);
+    sprintf(name, "%s_add_array_en", layer->layer_param().name().c_str());
+    sc_trace(tf_, conv_layer_pe->add_array_en_, name);
     sprintf(name, "%s_demux_out_reg_clr", layer->layer_param().name().c_str());
     sc_trace(tf_, conv_layer_pe->demux_out_reg_clear_, name);
     sprintf(name, "%s_demux_out_reg_en", layer->layer_param().name().c_str());

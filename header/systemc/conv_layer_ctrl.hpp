@@ -38,10 +38,13 @@ class ConvLayerCtrl : public sc_module {
     sc_out<int> weight_mem_rd_addr;
     // multiplier array
     sc_out<bool> mult_array_en;
+    sc_out<int> mult_array_kernel_idx;
     sc_out<bool>* mult_array_in_valid;
     // add array
     sc_out<bool> add_array_en;
     sc_out<bool>* add_array_in_valid;
+    sc_out<bool> add_array_accumulate_kernel;
+    sc_out<bool> add_array_accumulate_out_reg;
     sc_out<int> add_array_out_reg_select;
     // demux output register
     sc_out<bool> demux_out_reg_clear;
@@ -53,7 +56,7 @@ class ConvLayerCtrl : public sc_module {
   public:
     // constructor
     explicit ConvLayerCtrl(sc_module_name module_name, int Kh, int Kw, int h,
-        int w, int Nin, int Nout, int Pin, int Pout, int Pad_h=0,
+        int w, int Nin, int Nout, int Pin, int Pout, int Pk, int Pad_h=0,
         int Pad_w=0, int Stride_h=1, int Stride_w=1,
         int extra_pipeline_stage=0);
     // destructor
@@ -71,10 +74,12 @@ class ConvLayerCtrl : public sc_module {
     int h_, w_;                 // input feature map spatial dimension
     int Nin_, Nout_;            // channel depth for input & output feature map
     int Pin_, Pout_;            // input & output parallelism
+    int Pk_;                    // kernel parallelism
     int Pad_h_, Pad_w_;         // pad dimension
     int Stride_h_, Stride_w_;   // stride dimension
 
     // internal pipeline stage variables
+    // Line buffer Mux, MULT, ADD, Demux
     static const int PIPELINE_STAGE = 4;
     // extra pipeline stage in CONV PE (model the fact that MULT, ADD may take
     // multiple clock cycles)
@@ -87,9 +92,12 @@ class ConvLayerCtrl : public sc_module {
     // where the pair (i, j) indicates the i-th input feature map & j-th output
     // feature map (recorded by ConvLayerCtrlProc, used by MultArrayCtrlProc)
     std::pair<int, int> feat_map_loc_;
+    // additional unrolled kernel index location
+    int kernel_loc_;
 
     // output feature map index (used by AddArrayCtrlProc)
     int out_feat_idx_add_ctrl_;
+    int kernel_loc_add_;
 
     // output feature map index (used by DemuxOutCtrlReg)
     int out_feat_idx_demux_out_ctrl_;

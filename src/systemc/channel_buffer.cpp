@@ -75,8 +75,9 @@ void ChannelBuffer::ChannelBufferRX() {
       } while (!prev_layer_valid.read());
       // if there is no no element in the fifo and the next stage is ready to
       // receive, we will not push the element in the FIFO and bypass the data
-      // to the output of the channel
-      if (BufferSize() == 0 && next_layer_rdy.read()) {
+      // to the output of the channel (bug fix: check valid)
+      if (BufferSize() == 0 && next_layer_rdy.read() &&
+          !next_layer_valid.read()) {
         continue;
       }
 
@@ -132,7 +133,8 @@ void ChannelBuffer::ChannelBufferTX() {
       next_layer_valid.write(0);
     } else {
       // bypass the data from the input to the output
-      if (prev_layer_valid.read() && next_layer_rdy.read()) {
+      if (prev_layer_valid.read() && next_layer_rdy.read() &&
+          !next_layer_valid.read()) {
         next_layer_valid.write(1);
         for (int i = 0; i < Nin_; ++i) {
           next_layer_data[i].write(prev_layer_data[i].read());

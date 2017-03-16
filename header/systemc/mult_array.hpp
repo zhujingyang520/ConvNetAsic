@@ -21,9 +21,10 @@ class MultArray : public sc_module {
     sc_in<bool> mult_array_en;
     // multiplier array input data
     sc_in<bool>* mult_array_in_valid;           // multiplier array input valid
+    sc_in<int> mult_array_kernel_idx;           // multiplier array kernel index
     sc_in<Payload>* mult_array_act_in_data;     // feature map input
     sc_in<Payload>* mult_array_weight_in_data;  // weight input
-    // multiplier array output data: of shape [Pout, Pin, Kh, Kw]
+    // multiplier array output data: of shape [Pout, Pin, Pk]
     sc_out<Payload>* mult_array_output_data;
 
     SC_HAS_PROCESS(MultArray);
@@ -31,7 +32,8 @@ class MultArray : public sc_module {
   public:
     // constructor
     explicit MultArray(sc_module_name module_name, int Kh, int Kw, int Pin,
-        int Pout, int bit_width=8, int tech_node=28, double clk_freq=1.);
+        int Pout, int Pk, int bit_width=8, int tech_node=28,
+        double clk_freq=1.);
     // destructor
     ~MultArray();
 
@@ -48,6 +50,7 @@ class MultArray : public sc_module {
   private:
     int Kh_, Kw_;     // spatial dimension of kernel
     int Pin_, Pout_;  // input parallelism & output parallelism
+    int Pk_;          // kernel parallelism
     // multipler model
     MultModel* mult_model_;
     double dynamic_energy_;

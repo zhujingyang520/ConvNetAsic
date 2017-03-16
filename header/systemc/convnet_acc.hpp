@@ -95,11 +95,11 @@ class ConvNetAcc : public sc_module {
     // pipeline stage for within processing unit
     static const int pipeline_stage_ = 6;
     // helper function to set the parallelism input & parallelism output
-    std::pair<int, int> CalculateParallelsim(int Nin, int Nout, int h, int w,
-        int layer_inference_rate) const;
+    std::pair<std::pair<int, int>, int> CalculateParallelsim(int Nin, int Nout,
+        int Kh, int Kw, int h, int w, int layer_inference_rate) const;
     // brute force search of the parallelism of the CONV
-    std::pair<int, int> CalculateParallelsimBruteForce(int Nin, int Nout,
-        double rate) const;
+    std::pair<std::pair<int, int>, int> CalculateParallelsimBruteForce(int Nin,
+        int Nout, int Kh, int Kw, double rate) const;
 
   private:
     // initialize the modules & interconnections based on the ConvNet
@@ -149,8 +149,8 @@ class ConvNetAcc : public sc_module {
     // map (blob in caffe), and value is the index of interconnections
     std::map<std::string, int> interconnections_to_idx_;
 
-    // parallelism for each layer, key: layer index; value: <Pin, Pout>
-    std::map<int, std::pair<int, int> > parallelism_;
+    // parallelism for each layer, key: layer index; value: <Pin, Pout, Pk>
+    std::map<int, std::pair<std::pair<int, int>, int> > parallelism_;
 
     // trace file
     sc_trace_file* tf_;

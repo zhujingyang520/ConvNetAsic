@@ -74,6 +74,7 @@ class ConvLayerPe : public sc_module {
     int Nout_;    // output feature map depth
     int Pout_;    // parallelism of output feature map
     int Pin_;     // parallelism of input feature map
+    int Pk_;      // parallelism of the kernel
   public:
     // internal interconnections
     sc_signal<bool> line_buffer_valid_;
@@ -84,6 +85,7 @@ class ConvLayerPe : public sc_module {
     sc_signal<bool> weight_mem_rd_en_;
     sc_signal<int> weight_mem_rd_addr_;
     sc_signal<bool> mult_array_en_;
+    sc_signal<int> mult_array_kernel_idx_;
     sc_signal<Payload>* line_buffer_out_data_;
     sc_signal<Payload>* line_buffer_mux_out_data_;
     sc_signal<Payload>* weight_mem_rd_data_;
@@ -91,6 +93,8 @@ class ConvLayerPe : public sc_module {
     sc_signal<Payload>* mult_array_out_data_;
     sc_signal<bool> add_array_en_;
     sc_signal<bool>* add_array_in_valid_;
+    sc_signal<bool> add_array_accumulate_kernel_;
+    sc_signal<bool> add_array_accumulate_out_reg_;
     sc_signal<int> add_array_out_reg_select_;
     sc_signal<Payload>* add_array_reg_in_data_;
     sc_signal<Payload>* add_array_out_data_;
@@ -102,7 +106,7 @@ class ConvLayerPe : public sc_module {
   public:
     // constructor
     explicit ConvLayerPe(sc_module_name module_name, int Kh, int Kw, int h,
-        int w, int Nin, int Nout, int Pin, int Pout, int Pad_h=0,
+        int w, int Nin, int Nout, int Pin, int Pout, int Pk, int Pad_h=0,
         int Pad_w=0, int Stride_h=1, int Stride_w=1,
         config::ConfigParameter_MemoryType memory_type=
         config::ConfigParameter_MemoryType_ROM, int bit_width=8,

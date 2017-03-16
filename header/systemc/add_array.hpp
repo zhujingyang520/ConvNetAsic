@@ -21,6 +21,11 @@ class AddArray : public sc_module {
     sc_in<bool> add_array_enable;
     // add array input data valid
     sc_in<bool>* add_array_in_valid;
+    // add array flag control (support kernel unrolling)
+    // accumulate the internal registers
+    sc_in<bool> add_array_accumulate_kernel;
+    // accumulate the Pout register
+    sc_in<bool> add_array_accumulate_out_reg;
     // add array input data from mult array
     sc_in<Payload>* add_array_mult_in_data;
     // add array input data from registers (partial results)
@@ -33,7 +38,8 @@ class AddArray : public sc_module {
   public:
     // constructor
     explicit AddArray(sc_module_name module_name, int Kh, int Kw, int Pin,
-        int Pout, int bit_width=8, int tech_node=28, double clk_freq=1.);
+        int Pout, int Pk, int bit_width=8, int tech_node=28,
+        double clk_freq=1.);
     // destructor
     ~AddArray();
 
@@ -50,8 +56,12 @@ class AddArray : public sc_module {
   private:
     int Kh_, Kw_;     // spatial dimension of kernel
     int Pin_, Pout_;  // input parallelism & output parallelism
+    int Pk_;          // kernel parallelism
     AdderModel* adder_model_;
     double dynamic_energy_;
+
+    // internal registers for kernel unrolling
+    Payload* add_reg_;// register array in the adder
 };
 
 #endif

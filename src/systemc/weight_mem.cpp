@@ -9,18 +9,19 @@ using namespace std;
 using namespace config;
 
 WeightMem::WeightMem(sc_module_name module_name, int Kh, int Kw, int Pin,
-    int Pout, int Nin, int Nout, ConfigParameter_MemoryType memory_type,
+    int Pout, int Pk, int Nin, int Nout, ConfigParameter_MemoryType memory_type,
     int bit_width, int tech_node, double clk_freq) :
-  sc_module(module_name), Kh_(Kh), Kw_(Kw), Pin_(Pin), Pout_(Pout), Nin_(Nin),
-  Nout_(Nout) {
+  sc_module(module_name), Kh_(Kh), Kw_(Kw), Pin_(Pin), Pout_(Pout), Pk_(Pk),
+  Nin_(Nin), Nout_(Nout) {
     // the memory read data is of width Pout*Pin*Kh*Kw
-    mem_rd_data = new sc_out<Payload>[Pout_*Pin_*Kh_*Kw_];
+    mem_rd_data = new sc_out<Payload>[Pout_*Pin_*Pk_];
 
     // memory with
-    mem_width_ = Pout_*Pin_*Kh_*Kw_;
+    mem_width_ = Pout_*Pin_*Pk_;
     // memory depth can be inferred from channel depth & parallelism
     mem_depth_ = static_cast<int>(ceil(static_cast<double>(Nout_)/Pout_) *
-      ceil(static_cast<double>(Nin_)/Pin_));
+      ceil(static_cast<double>(Nin_)/Pin_) * ceil(static_cast<double>(Kh_*Kw_)/
+        Pk_));
 
     // TODO: for now, we simply assume the elements in memory are initialized as
     // full ones
