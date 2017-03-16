@@ -22,6 +22,7 @@ ConvNetAcc::ConvNetAcc(sc_module_name module_name, const Net& net,
   tech_node_ = config_param.tech_node();
   clk_freq_ = config_param.clk_freq();
   memory_type_ = config_param.memory_type();
+  kernel_unrolling_flag_ = config_param.kernel_unrolling_flag();
 
   // initialize the parallelism
   InitParallelism(net, config_param.pixel_inference_rate());
@@ -230,6 +231,10 @@ pair<pair<int, int>, int> ConvNetAcc::CalculateParallelsimBruteForce(int Nin,
   for (int Pin_ = 1; Pin_ <= Nin; ++Pin_) {
     for (int Pout_ = 1; Pout_ <= Nout; ++Pout_) {
       for (int Pk_ = 1; Pk_ <= Kh*Kw; ++Pk_) {
+        if (kernel_unrolling_flag_ == false && Pk_ != Kh*Kw) {
+          // Pk = Kernel size if kernel unrolling option is disabled
+          continue;
+        }
         double calculated_rate = ceil(static_cast<double>(Nin) / Pin_) *
           ceil(static_cast<double>(Nout) / Pout_) *
           ceil(static_cast<double>(Kh*Kw) / Pk_);

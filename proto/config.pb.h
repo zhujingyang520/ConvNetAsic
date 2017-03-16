@@ -214,6 +214,20 @@ class ConfigParameter : public ::google::protobuf::Message {
   inline ::std::string* release_trace_file();
   inline void set_allocated_trace_file(::std::string* trace_file);
 
+  // optional int32 early_stop_frame_size = 11 [default = 1];
+  inline bool has_early_stop_frame_size() const;
+  inline void clear_early_stop_frame_size();
+  static const int kEarlyStopFrameSizeFieldNumber = 11;
+  inline ::google::protobuf::int32 early_stop_frame_size() const;
+  inline void set_early_stop_frame_size(::google::protobuf::int32 value);
+
+  // optional bool kernel_unrolling_flag = 12 [default = false];
+  inline bool has_kernel_unrolling_flag() const;
+  inline void clear_kernel_unrolling_flag();
+  static const int kKernelUnrollingFlagFieldNumber = 12;
+  inline bool kernel_unrolling_flag() const;
+  inline void set_kernel_unrolling_flag(bool value);
+
   // @@protoc_insertion_point(class_scope:config.ConfigParameter)
  private:
   inline void set_has_model_file();
@@ -236,6 +250,10 @@ class ConfigParameter : public ::google::protobuf::Message {
   inline void clear_has_pixel_inference_rate();
   inline void set_has_trace_file();
   inline void clear_has_trace_file();
+  inline void set_has_early_stop_frame_size();
+  inline void clear_has_early_stop_frame_size();
+  inline void set_has_kernel_unrolling_flag();
+  inline void clear_has_kernel_unrolling_flag();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
@@ -251,6 +269,8 @@ class ConfigParameter : public ::google::protobuf::Message {
   ::google::protobuf::int32 append_buffer_capacity_;
   ::std::string* trace_file_;
   ::google::protobuf::int32 pixel_inference_rate_;
+  ::google::protobuf::int32 early_stop_frame_size_;
+  bool kernel_unrolling_flag_;
   friend void  protobuf_AddDesc_config_2eproto();
   friend void protobuf_AssignDesc_config_2eproto();
   friend void protobuf_ShutdownFile_config_2eproto();
@@ -608,6 +628,54 @@ inline void ConfigParameter::set_allocated_trace_file(::std::string* trace_file)
     trace_file_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   }
   // @@protoc_insertion_point(field_set_allocated:config.ConfigParameter.trace_file)
+}
+
+// optional int32 early_stop_frame_size = 11 [default = 1];
+inline bool ConfigParameter::has_early_stop_frame_size() const {
+  return (_has_bits_[0] & 0x00000400u) != 0;
+}
+inline void ConfigParameter::set_has_early_stop_frame_size() {
+  _has_bits_[0] |= 0x00000400u;
+}
+inline void ConfigParameter::clear_has_early_stop_frame_size() {
+  _has_bits_[0] &= ~0x00000400u;
+}
+inline void ConfigParameter::clear_early_stop_frame_size() {
+  early_stop_frame_size_ = 1;
+  clear_has_early_stop_frame_size();
+}
+inline ::google::protobuf::int32 ConfigParameter::early_stop_frame_size() const {
+  // @@protoc_insertion_point(field_get:config.ConfigParameter.early_stop_frame_size)
+  return early_stop_frame_size_;
+}
+inline void ConfigParameter::set_early_stop_frame_size(::google::protobuf::int32 value) {
+  set_has_early_stop_frame_size();
+  early_stop_frame_size_ = value;
+  // @@protoc_insertion_point(field_set:config.ConfigParameter.early_stop_frame_size)
+}
+
+// optional bool kernel_unrolling_flag = 12 [default = false];
+inline bool ConfigParameter::has_kernel_unrolling_flag() const {
+  return (_has_bits_[0] & 0x00000800u) != 0;
+}
+inline void ConfigParameter::set_has_kernel_unrolling_flag() {
+  _has_bits_[0] |= 0x00000800u;
+}
+inline void ConfigParameter::clear_has_kernel_unrolling_flag() {
+  _has_bits_[0] &= ~0x00000800u;
+}
+inline void ConfigParameter::clear_kernel_unrolling_flag() {
+  kernel_unrolling_flag_ = false;
+  clear_has_kernel_unrolling_flag();
+}
+inline bool ConfigParameter::kernel_unrolling_flag() const {
+  // @@protoc_insertion_point(field_get:config.ConfigParameter.kernel_unrolling_flag)
+  return kernel_unrolling_flag_;
+}
+inline void ConfigParameter::set_kernel_unrolling_flag(bool value) {
+  set_has_kernel_unrolling_flag();
+  kernel_unrolling_flag_ = value;
+  // @@protoc_insertion_point(field_set:config.ConfigParameter.kernel_unrolling_flag)
 }
 
 

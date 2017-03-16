@@ -32,7 +32,8 @@ void Testbench::InputLayerProc() {
       start_frame_data_ = data;
     }
     // early stop
-    if (received_output_ && data == (1+start_frame_data_+input_spatial_dim_)) {
+    if (received_output_ && data == (1+start_frame_data_+early_stop_frame_size_*
+          input_spatial_dim_)) {
       cout << "Early stop. Sent a complete frame after pipeline stage is fully"
         " warmed up!" << endl;
       end_of_frame_ = sc_time_stamp();
@@ -99,7 +100,8 @@ void Testbench::ReportStatistics() const {
   // Avg interval: throughput
   sc_time avg_interval;
   if (start_of_frame_.to_double() != 0 && end_of_frame_.to_double() != 0) {
-    avg_interval = (end_of_frame_ - start_of_frame_) / (input_spatial_dim_-1);
+    avg_interval = (end_of_frame_ - start_of_frame_) / (early_stop_frame_size_*
+        input_spatial_dim_-1);
   } else {
     avg_interval = (inject_time_.back() - inject_time_.front()) /
       (inject_time_.size() - 1);

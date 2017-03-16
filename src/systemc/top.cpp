@@ -31,7 +31,7 @@ Top::Top(sc_module_name module_name, const Net& net,
 
   // allocate the Testbench
   testbench = new Testbench("testbench", convnet_acc->Nin_, convnet_acc->Nout_,
-      convnet_acc->input_spatial_dim_);
+      convnet_acc->input_spatial_dim_, config_param.early_stop_frame_size());
   testbench->clock(clock);
   testbench->reset(reset);
   testbench->input_layer_valid(input_layer_valid);

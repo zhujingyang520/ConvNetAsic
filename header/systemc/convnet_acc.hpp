@@ -69,6 +69,8 @@ class ConvNetAcc : public sc_module {
     double clk_freq_;     // clock frequency [GHz]
     // weight (kernel) memory type
     config::ConfigParameter_MemoryType memory_type_;
+    // kernel unrolling flag
+    bool kernel_unrolling_flag_;
 
   public:
     // constructor

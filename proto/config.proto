@@ -29,4 +29,8 @@ message ConfigParameter {
 
   // tracked trace file name
   optional string trace_file = 10 [default = ""];
+
+  // advanced settings: for debug issues
+  optional int32 early_stop_frame_size = 11 [default = 1];
+  optional bool kernel_unrolling_flag = 12 [default = false];
 }

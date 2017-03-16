@@ -32,9 +32,10 @@ class Testbench : public sc_module {
   public:
     // constructor
     explicit Testbench(sc_module_name module_name, int Nin, int Nout,
-        int input_spatial_dim) :
+        int input_spatial_dim, int early_stop_frame_size) :
       sc_module(module_name), Nin_(Nin), Nout_(Nout),
-      input_spatial_dim_(input_spatial_dim) {
+      input_spatial_dim_(input_spatial_dim),
+      early_stop_frame_size_(early_stop_frame_size) {
       input_layer_data = new sc_out<Payload> [Nin];
       output_layer_data = new sc_in<Payload> [Nout];
 
@@ -69,6 +70,8 @@ class Testbench : public sc_module {
     int start_frame_data_;
     // flag for received output data
     bool received_output_;
+    // early stop frame size
+    int early_stop_frame_size_;
 };
 
 #endif

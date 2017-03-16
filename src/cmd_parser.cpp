@@ -85,7 +85,11 @@ void CmdParser::ConfigParamSummary() const {
   cout << "##################################################" << endl;
   cout << "# clk freq [GHz]: " << config_param.clk_freq() << endl;
   cout << "# reset cycle: " << config_param.reset_period() << endl;
-  cout << "# sim cycle: " << config_param.sim_period() << endl;
+  if (config_param.sim_period() > 0) {
+    cout << "# sim cycle: " << config_param.sim_period() << endl;
+  } else {
+    cout << "# sim cycles: inf (wait for early stop)" << endl;
+  }
   cout << "# dumped trace file: " << config_param.trace_file() << endl;
   cout << "# ConvNet model file: " << config_param.model_file() << endl;
   cout << "# tech node: " << config_param.tech_node() << endl;
@@ -97,5 +101,9 @@ void CmdParser::ConfigParamSummary() const {
     << endl;
   cout << "# target inference rate [cycle/pixel]: "
     << config_param.pixel_inference_rate() << endl;
+  cout << "# early stop frame size: " << config_param.early_stop_frame_size()
+    << endl;
+  cout << "# kernel unrolling flag: " << config_param.kernel_unrolling_flag()
+    << endl;
   cout << "##################################################" << endl;
 }

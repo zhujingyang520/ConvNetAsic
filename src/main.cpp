@@ -48,14 +48,20 @@ int sc_main (int argc, char **argv) {
 
   // run the simulation
   const int reset_period = cmd_parser.config_param.reset_period();
+  assert(reset_period > 0);
   cout << "starts reset for " << reset_period << " cycles ..." << endl;
   reset.write(1);
   sc_start(reset_period/clk_freq, SC_NS);
   reset.write(0);
 
   const int sim_period = cmd_parser.config_param.sim_period();
-  cout << "starts run simulation for " << sim_period << " cycles ..." << endl;
-  sc_start(sim_period/clk_freq, SC_NS);
+  if (sim_period > 0) {
+    cout << "starts run simulation for " << sim_period << " cycles ..." << endl;
+    sc_start(sim_period/clk_freq, SC_NS);
+  } else {
+    cout << "starts run simulation until early stop ..." << endl;
+    sc_start();
+  }
 
   // report the statistics of accelerator
   top.ReportStatistics();

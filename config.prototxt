@@ -2,8 +2,9 @@
 # basic simulation setting
 # reset and simulation period (in no. of clock cycle)
 reset_period: 10
-#sim_period: 20000000
-sim_period: 200000
+# negative simulation time stands for stop simulation until early stop
+sim_period: -1
+#sim_period: 200
 # clock frequency [GHz]
 clk_freq: 1
 
@@ -55,8 +56,19 @@ bit_width: 8
 memory_type: ROM
 
 # append buffer capacity
-append_buffer_capacity: 100
+append_buffer_capacity: 0
 
 # target pixel inference rate [no. of clock cycle]
 pixel_inference_rate: 10
 
+
+######################################
+# Advanced settings
+######################################
+# early stop frame size: no. of frames required to be received after pipeline is
+# warmed up
+early_stop_frame_size: 4
+
+# kernel unrolling flag: turn on when required to have additional unrolling
+# dimension over kernel
+kernel_unrolling_flag: 0

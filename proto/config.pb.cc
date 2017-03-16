@@ -35,7 +35,7 @@ void protobuf_AssignDesc_config_2eproto() {
       "config.proto");
   GOOGLE_CHECK(file != NULL);
   ConfigParameter_descriptor_ = file->message_type(0);
-  static const int ConfigParameter_offsets_[10] = {
+  static const int ConfigParameter_offsets_[12] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ConfigParameter, model_file_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ConfigParameter, tech_node_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ConfigParameter, bit_width_),
@@ -46,6 +46,8 @@ void protobuf_AssignDesc_config_2eproto() {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ConfigParameter, append_buffer_capacity_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ConfigParameter, pixel_inference_rate_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ConfigParameter, trace_file_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ConfigParameter, early_stop_frame_size_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ConfigParameter, kernel_unrolling_flag_),
   };
   ConfigParameter_reflection_ =
     new ::google::protobuf::internal::GeneratedMessageReflection(
@@ -89,7 +91,7 @@ void protobuf_AddDesc_config_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-    "\n\014config.proto\022\006config\"\310\002\n\017ConfigParamet"
+    "\n\014config.proto\022\006config\"\220\003\n\017ConfigParamet"
     "er\022\022\n\nmodel_file\030\001 \002(\t\022\025\n\ttech_node\030\002 \001("
     "\005:\00228\022\021\n\tbit_width\030\003 \002(\005\022<\n\013memory_type\030"
     "\004 \001(\0162\".config.ConfigParameter.MemoryTyp"
@@ -97,7 +99,9 @@ void protobuf_AddDesc_config_2eproto() {
     "od\030\006 \002(\005\022\023\n\010clk_freq\030\007 \001(\001:\0011\022!\n\026append_"
     "buffer_capacity\030\010 \001(\005:\0010\022!\n\024pixel_infere"
     "nce_rate\030\t \001(\005:\003100\022\024\n\ntrace_file\030\n \001(\t:"
-    "\000\"\036\n\nMemoryType\022\007\n\003ROM\020\000\022\007\n\003RAM\020\001", 353);
+    "\000\022 \n\025early_stop_frame_size\030\013 \001(\005:\0011\022$\n\025k"
+    "ernel_unrolling_flag\030\014 \001(\010:\005false\"\036\n\nMem"
+    "oryType\022\007\n\003ROM\020\000\022\007\n\003RAM\020\001", 425);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "config.proto", &protobuf_RegisterTypes);
   ConfigParameter::default_instance_ = new ConfigParameter();
@@ -146,6 +150,8 @@ const int ConfigParameter::kClkFreqFieldNumber;
 const int ConfigParameter::kAppendBufferCapacityFieldNumber;
 const int ConfigParameter::kPixelInferenceRateFieldNumber;
 const int ConfigParameter::kTraceFileFieldNumber;
+const int ConfigParameter::kEarlyStopFrameSizeFieldNumber;
+const int ConfigParameter::kKernelUnrollingFlagFieldNumber;
 #endif  // !_MSC_VER
 
 ConfigParameter::ConfigParameter()
@@ -177,6 +183,8 @@ void ConfigParameter::SharedCtor() {
   append_buffer_capacity_ = 0;
   pixel_inference_rate_ = 100;
   trace_file_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  early_stop_frame_size_ = 1;
+  kernel_unrolling_flag_ = false;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -239,13 +247,15 @@ void ConfigParameter::Clear() {
     tech_node_ = 28;
     clk_freq_ = 1;
   }
-  if (_has_bits_[8 / 32] & 768) {
+  if (_has_bits_[8 / 32] & 3840) {
     pixel_inference_rate_ = 100;
     if (has_trace_file()) {
       if (trace_file_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
         trace_file_->clear();
       }
     }
+    early_stop_frame_size_ = 1;
+    kernel_unrolling_flag_ = false;
   }
 
 #undef OFFSET_OF_FIELD_
@@ -419,6 +429,36 @@ bool ConfigParameter::MergePartialFromCodedStream(
         } else {
           goto handle_unusual;
         }
+        if (input->ExpectTag(88)) goto parse_early_stop_frame_size;
+        break;
+      }
+
+      // optional int32 early_stop_frame_size = 11 [default = 1];
+      case 11: {
+        if (tag == 88) {
+         parse_early_stop_frame_size:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
+                 input, &early_stop_frame_size_)));
+          set_has_early_stop_frame_size();
+        } else {
+          goto handle_unusual;
+        }
+        if (input->ExpectTag(96)) goto parse_kernel_unrolling_flag;
+        break;
+      }
+
+      // optional bool kernel_unrolling_flag = 12 [default = false];
+      case 12: {
+        if (tag == 96) {
+         parse_kernel_unrolling_flag:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
+                 input, &kernel_unrolling_flag_)));
+          set_has_kernel_unrolling_flag();
+        } else {
+          goto handle_unusual;
+        }
         if (input->ExpectAtEnd()) goto success;
         break;
       }
@@ -509,6 +549,16 @@ void ConfigParameter::SerializeWithCachedSizes(
       10, this->trace_file(), output);
   }
 
+  // optional int32 early_stop_frame_size = 11 [default = 1];
+  if (has_early_stop_frame_size()) {
+    ::google::protobuf::internal::WireFormatLite::WriteInt32(11, this->early_stop_frame_size(), output);
+  }
+
+  // optional bool kernel_unrolling_flag = 12 [default = false];
+  if (has_kernel_unrolling_flag()) {
+    ::google::protobuf::internal::WireFormatLite::WriteBool(12, this->kernel_unrolling_flag(), output);
+  }
+
   if (!unknown_fields().empty()) {
     ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
         unknown_fields(), output);
@@ -580,6 +630,16 @@ void ConfigParameter::SerializeWithCachedSizes(
     target =
       ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
         10, this->trace_file(), target);
+  }
+
+  // optional int32 early_stop_frame_size = 11 [default = 1];
+  if (has_early_stop_frame_size()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(11, this->early_stop_frame_size(), target);
+  }
+
+  // optional bool kernel_unrolling_flag = 12 [default = false];
+  if (has_kernel_unrolling_flag()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteBoolToArray(12, this->kernel_unrolling_flag(), target);
   }
 
   if (!unknown_fields().empty()) {
@@ -663,6 +723,18 @@ int ConfigParameter::ByteSize() const {
           this->trace_file());
     }
 
+    // optional int32 early_stop_frame_size = 11 [default = 1];
+    if (has_early_stop_frame_size()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::Int32Size(
+          this->early_stop_frame_size());
+    }
+
+    // optional bool kernel_unrolling_flag = 12 [default = false];
+    if (has_kernel_unrolling_flag()) {
+      total_size += 1 + 1;
+    }
+
   }
   if (!unknown_fields().empty()) {
     total_size +=
@@ -722,6 +794,12 @@ void ConfigParameter::MergeFrom(const ConfigParameter& from) {
     if (from.has_trace_file()) {
       set_trace_file(from.trace_file());
     }
+    if (from.has_early_stop_frame_size()) {
+      set_early_stop_frame_size(from.early_stop_frame_size());
+    }
+    if (from.has_kernel_unrolling_flag()) {
+      set_kernel_unrolling_flag(from.kernel_unrolling_flag());
+    }
   }
   mutable_unknown_fields()->MergeFrom(from.unknown_fields());
 }
@@ -756,6 +834,8 @@ void ConfigParameter::Swap(ConfigParameter* other) {
     std::swap(append_buffer_capacity_, other->append_buffer_capacity_);
     std::swap(pixel_inference_rate_, other->pixel_inference_rate_);
     std::swap(trace_file_, other->trace_file_);
+    std::swap(early_stop_frame_size_, other->early_stop_frame_size_);
+    std::swap(kernel_unrolling_flag_, other->kernel_unrolling_flag_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     _unknown_fields_.Swap(&other->_unknown_fields_);
     std::swap(_cached_size_, other->_cached_size_);
