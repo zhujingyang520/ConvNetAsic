@@ -1,0 +1,63 @@
+name: "Inception v4 FC"
+layer {
+  name: "inception_c3_concat"
+  type: "Input"
+  top: "inception_c3_concat"
+  input_param {
+      shape: {
+          dim: 1
+          dim: 1536
+          dim: 8
+          dim: 8
+      }
+  }
+}
+layer {
+  name: "pool_8x8_s1"
+  type: "Pooling"
+  bottom: "inception_c3_concat"
+  top: "pool_8x8_s1"
+  pooling_param {
+    pool: AVE
+    global_pooling: true
+  }
+}
+layer {
+  name: "pool_8x8_s1_drop"
+  type: "Dropout"
+  bottom: "pool_8x8_s1"
+  top: "pool_8x8_s1_drop"
+  dropout_param {
+    dropout_ratio: 0.2
+  }
+}
+layer {
+  name: "classifier"
+  type: "InnerProduct"
+  bottom: "pool_8x8_s1_drop"
+  top: "classifier"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  inner_product_param {
+    num_output: 1000
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+layer {
+  name: "prob"
+  type: "Softmax"
+  bottom: "classifier"
+  top: "prob"
+}

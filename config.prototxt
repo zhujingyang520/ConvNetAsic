@@ -3,8 +3,8 @@
 # reset and simulation period (in no. of clock cycle)
 reset_period: 10
 # negative simulation time stands for stop simulation until early stop
-sim_period: -1
-#sim_period: 200
+#sim_period: -1
+sim_period: 200
 # clock frequency [GHz]
 clk_freq: 1
 
@@ -27,6 +27,12 @@ trace_file: "trace"
 ## Inception-v4
 #model_file: "models/inception-v4/deploy.prototxt"
 #model_file: "models/inception-v4/inception_v4_stem.prototxt"
+#model_file: "models/inception-v4/inception_v4_inception_a.prototxt"
+#model_file: "models/inception-v4/inception_v4_reduction_a.prototxt"
+#model_file: "models/inception-v4/inception_v4_inception_b.prototxt"
+#model_file: "models/inception-v4/inception_v4_reduction_b.prototxt"
+#model_file: "models/inception-v4/inception_v4_inception_c.prototxt"
+model_file: "models/inception-v4/inception_v4_fc.prototxt"
 
 ## ResNet-152
 #model_file: "models/resnet/ResNet-152-deploy.prototxt"
@@ -36,7 +42,7 @@ trace_file: "trace"
 
 # toy design
 #model_file: "models/toy_design/toy1.prototxt"
-model_file: "models/toy_design/toy1_1.prototxt"
+#model_file: "models/toy_design/toy1_1.prototxt"
 #model_file: "models/toy_design/toy2.prototxt"
 #model_file: "models/toy_design/toy3.prototxt"
 #model_file: "models/toy_design/toy4.prototxt"
@@ -59,7 +65,7 @@ memory_type: ROM
 append_buffer_capacity: 0
 
 # target pixel inference rate [no. of clock cycle]
-pixel_inference_rate: 10
+pixel_inference_rate: 50
 
 
 ######################################
@@ -67,8 +73,8 @@ pixel_inference_rate: 10
 ######################################
 # early stop frame size: no. of frames required to be received after pipeline is
 # warmed up
-early_stop_frame_size: 4
+early_stop_frame_size: 1
 
 # kernel unrolling flag: turn on when required to have additional unrolling
-# dimension over kernel
-kernel_unrolling_flag: 0
+# dimension over kernel flag: {true, false}
+kernel_unrolling_flag: false

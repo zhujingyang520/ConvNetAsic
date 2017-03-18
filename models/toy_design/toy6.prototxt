@@ -1,0 +1,84 @@
+name: "Inception v4 stem 3"
+layer {
+  name: "inception_stem2"
+  type: "Input"
+  top: "inception_stem2"
+  input_param {
+      shape: {
+          dim: 1
+          dim: 192
+          dim: 7
+          dim: 7
+      }
+  }
+}
+layer {
+  name: "inception_stem3_3x3_s2"
+  type: "Convolution"
+  bottom: "inception_stem2"
+  top: "inception_stem3_3x3_s2"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  convolution_param {
+    num_output: 192
+    pad: 0
+    kernel_size: 3
+    stride: 2
+    weight_filler {
+      type: "xavier"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.2
+    }
+  }
+}
+layer {
+  name: "inception_stem3_3x3_s2_bn"
+  type: "BatchNorm"
+  bottom: "inception_stem3_3x3_s2"
+  top: "inception_stem3_3x3_s2"
+  batch_norm_param {
+    use_global_stats: false
+  }
+}
+layer {
+  name: "inception_stem3_3x3_s2_scale"
+  type: "Scale"
+  bottom: "inception_stem3_3x3_s2"
+  top: "inception_stem3_3x3_s2"
+  scale_param {
+    bias_term: true
+  }
+}
+layer {
+  name: "inception_stem3_3x3_s2_relu"
+  type: "ReLU"
+  bottom: "inception_stem3_3x3_s2"
+  top: "inception_stem3_3x3_s2"
+}
+layer {
+  name: "inception_stem3_pool"
+  type: "Pooling"
+  bottom: "inception_stem2"
+  top: "inception_stem3_pool"
+  pooling_param {
+    pool: MAX
+    kernel_size: 3
+    stride: 2
+  }
+}
+layer {
+  name: "inception_stem3"
+  type: "Concat"
+  bottom: "inception_stem3_3x3_s2"
+  bottom: "inception_stem3_pool"
+  top: "inception_stem3"
+}

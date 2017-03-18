@@ -37,6 +37,7 @@ ChannelBuffer::ChannelBuffer(sc_module_name module_name, int Nin, int capacity,
   // the actual buffer depth (i.e. max_buffer_size_)
   const int memory_width = Nin * bit_width;
   const int memory_depth = INIT_MEM_DEPTH;
+  max_buffer_size_ = 0;
   memory_model_ = new MemoryModel(memory_width, memory_depth, tech_node,
       config::ConfigParameter_MemoryType_RAM, clk_freq);
   // initialize the dynamic energy
