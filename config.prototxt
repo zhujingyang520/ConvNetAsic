@@ -32,7 +32,7 @@ trace_file: "trace"
 #model_file: "models/inception-v4/inception_v4_inception_b.prototxt"
 #model_file: "models/inception-v4/inception_v4_reduction_b.prototxt"
 #model_file: "models/inception-v4/inception_v4_inception_c.prototxt"
-model_file: "models/inception-v4/inception_v4_fc.prototxt"
+#model_file: "models/inception-v4/inception_v4_fc.prototxt"
 
 ## ResNet-152
 #model_file: "models/resnet/ResNet-152-deploy.prototxt"
@@ -45,7 +45,7 @@ model_file: "models/inception-v4/inception_v4_fc.prototxt"
 #model_file: "models/toy_design/toy1_1.prototxt"
 #model_file: "models/toy_design/toy2.prototxt"
 #model_file: "models/toy_design/toy3.prototxt"
-#model_file: "models/toy_design/toy4.prototxt"
+model_file: "models/toy_design/toy4.prototxt"
 #model_file: "models/toy_design/toy5.prototxt"
 #model_file: "models/toy_design/toy6.prototxt"
 
@@ -67,6 +67,34 @@ append_buffer_capacity: 0
 # target pixel inference rate [no. of clock cycle]
 pixel_inference_rate: 50
 
+#########################################################
+# sample pixel inference rate for inception-v4 breakdown
+#########################################################
+# layer inference should be kept uniform over ConvNet
+# the layer inference is calculated as follows:
+# layer inference rate = pixel inference rate * spatial dimension
+# sub-model       | feature map dim
+# inception stem  | 299x299x3
+# inception a     | 35x35x384
+# reduction a     | 35x35x384
+# inception b     | 17x17x1024
+# reduction b     | 17x17x1024
+# inception c     | 8x8x1536
+# fc              | 8x8x1536
+#################################
+# input pixel inference rate: 50
+#################################
+#pixel_inference_rate: 50 # stem
+#pixel_inference_rate: 3649 # inception a & reduction a
+#pixel_inference_rate: 15467 # inception b & reduction b
+#pixel_inference_rate: 69844 # inception c & fc
+##################################
+# input pixel inference rate: 400
+##################################
+#pixel_inference_rate: 400 # stem
+#pixel_inference_rate: 29192 # inception a & reduction a
+#pixel_inference_rate: 123738 # inception b & reduction b
+#pixel_inference_rate: 558756 # inception c & fc
 
 ######################################
 # Advanced settings
