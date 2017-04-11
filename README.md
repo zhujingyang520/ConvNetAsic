@@ -3,9 +3,9 @@ This is an on-going project to develop the ASIC generator for a specific neural
 network architecture provided by the Caffe Prototxt file.
 
 ## Installation
-The dependency for the current project includes the [SystemC]
-(http://accellera.org/downloads/standards/systemc) and the [Google Protocol
-Buffers] (https://developers.google.com/protocol-buffers/).
+The dependency for the current project includes the
+[SystemC](http://accellera.org/downloads/standards/systemc) and the
+[Google Protocol Buffers](https://developers.google.com/protocol-buffers/).
 
 The Makfile is provided for GCC compilation on Linux. The variable $SYSTEMC_ROOT
 shoud be changed accordingly based on the installation location of SystemC on
@@ -39,6 +39,10 @@ Modelsim and VCS.
 At the end of simulation, a detailed throughput and area breakdown the generated
 system will be exported.
 
+The RTL model will be dumped to the hard coded `projects` file.
+
 ## TODO list
 - Analysis of throughput, buffer, area, power relationship.
 - Optimization of hardware resource allocations.
+- Right now, the SystemC mode has been disabled temporarily in the main file.
+  Currently, the Program is in the RTL compiler mode.
