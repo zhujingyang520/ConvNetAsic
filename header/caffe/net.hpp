@@ -17,6 +17,8 @@
 class Net {
   // friend class of ConvNetAcc for easy access instance variables
   friend class ConvNetAcc;
+  // friend class of VerilogCompiler
+  friend class VerilogCompiler;
   public:
     /*
      * Constructor: Net

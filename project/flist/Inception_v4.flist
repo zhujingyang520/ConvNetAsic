@@ -1,0 +1,26 @@
+##################################
+# Generate by Verilog Compiler
+# (TODO) Edit the relative path
+##################################
+Inception_v4.v
+add_array.v
+channel_buffer.v
+concat.v
+conv_layer_ctrl.v
+conv_layer_pe.v
+fifo_sync.v
+kernel_mem.v
+line_buffer.v
+line_buffer_array.v
+merge_network.v
+mult_array.v
+multiplier.v
+mux.v
+mux_array.v
+nonlinear.v
+out_regfile.v
+pool_array.v
+pool_layer_ctrl.v
+pool_layer_pe.v
+row_buffer.v
+split.v

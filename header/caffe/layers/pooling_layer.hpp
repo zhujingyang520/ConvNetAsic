@@ -13,6 +13,7 @@
 
 class PoolingLayer : public Layer {
   friend class ConvNetAcc;
+  friend class VerilogCompiler;
   public:
     // Constructor
     explicit PoolingLayer(const caffe::LayerParameter& param)

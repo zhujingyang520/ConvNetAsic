@@ -33,4 +33,7 @@ message ConfigParameter {
   // advanced settings: for debug issues
   optional int32 early_stop_frame_size = 11 [default = 1];
   optional bool kernel_unrolling_flag = 12 [default = false];
+
+  // for RTL behavior simulation: inception_buffer_depth
+  optional int32 inception_buffer_depth = 13 [default = 1024];
 }

@@ -13,6 +13,7 @@
 
 class InnerProductLayer : public Layer {
   friend class ConvNetAcc;
+  friend class VerilogCompiler;
   public:
     // Constructor
     explicit InnerProductLayer(const caffe::LayerParameter& param)

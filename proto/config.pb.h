@@ -228,6 +228,13 @@ class ConfigParameter : public ::google::protobuf::Message {
   inline bool kernel_unrolling_flag() const;
   inline void set_kernel_unrolling_flag(bool value);
 
+  // optional int32 inception_buffer_depth = 13 [default = 1024];
+  inline bool has_inception_buffer_depth() const;
+  inline void clear_inception_buffer_depth();
+  static const int kInceptionBufferDepthFieldNumber = 13;
+  inline ::google::protobuf::int32 inception_buffer_depth() const;
+  inline void set_inception_buffer_depth(::google::protobuf::int32 value);
+
   // @@protoc_insertion_point(class_scope:config.ConfigParameter)
  private:
   inline void set_has_model_file();
@@ -254,6 +261,8 @@ class ConfigParameter : public ::google::protobuf::Message {
   inline void clear_has_early_stop_frame_size();
   inline void set_has_kernel_unrolling_flag();
   inline void clear_has_kernel_unrolling_flag();
+  inline void set_has_inception_buffer_depth();
+  inline void clear_has_inception_buffer_depth();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
@@ -271,6 +280,7 @@ class ConfigParameter : public ::google::protobuf::Message {
   ::google::protobuf::int32 pixel_inference_rate_;
   ::google::protobuf::int32 early_stop_frame_size_;
   bool kernel_unrolling_flag_;
+  ::google::protobuf::int32 inception_buffer_depth_;
   friend void  protobuf_AddDesc_config_2eproto();
   friend void protobuf_AssignDesc_config_2eproto();
   friend void protobuf_ShutdownFile_config_2eproto();
@@ -676,6 +686,30 @@ inline void ConfigParameter::set_kernel_unrolling_flag(bool value) {
   set_has_kernel_unrolling_flag();
   kernel_unrolling_flag_ = value;
   // @@protoc_insertion_point(field_set:config.ConfigParameter.kernel_unrolling_flag)
+}
+
+// optional int32 inception_buffer_depth = 13 [default = 1024];
+inline bool ConfigParameter::has_inception_buffer_depth() const {
+  return (_has_bits_[0] & 0x00001000u) != 0;
+}
+inline void ConfigParameter::set_has_inception_buffer_depth() {
+  _has_bits_[0] |= 0x00001000u;
+}
+inline void ConfigParameter::clear_has_inception_buffer_depth() {
+  _has_bits_[0] &= ~0x00001000u;
+}
+inline void ConfigParameter::clear_inception_buffer_depth() {
+  inception_buffer_depth_ = 1024;
+  clear_has_inception_buffer_depth();
+}
+inline ::google::protobuf::int32 ConfigParameter::inception_buffer_depth() const {
+  // @@protoc_insertion_point(field_get:config.ConfigParameter.inception_buffer_depth)
+  return inception_buffer_depth_;
+}
+inline void ConfigParameter::set_inception_buffer_depth(::google::protobuf::int32 value) {
+  set_has_inception_buffer_depth();
+  inception_buffer_depth_ = value;
+  // @@protoc_insertion_point(field_set:config.ConfigParameter.inception_buffer_depth)
 }
 
 

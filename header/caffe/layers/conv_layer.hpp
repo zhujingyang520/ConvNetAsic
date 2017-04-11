@@ -13,6 +13,7 @@
 
 class ConvolutionLayer : public Layer {
   friend class ConvNetAcc;
+  friend class VerilogCompiler;
   public:
     // Constructor
     explicit ConvolutionLayer(const caffe::LayerParameter& param)

@@ -45,6 +45,12 @@ ALL_BUILD_DIRS := $(sort $(BUILD_DIR) $(addprefix $(BUILD_DIR)/, $(SRC_DIRS)))
 # Protocol build directory
 PROTO_BUILD_DIR := $(BUILD_DIR)/$(PROTO_SRC_DIR)
 
+# tools to be compiled
+TOOL_DIR := tools
+TOOL_SRCS := $(shell find $(TOOL_DIR) -name "*.cpp")
+TOOL_OBJS := $(addprefix $(BUILD_DIR)/, $(TOOL_SRCS:.cpp=.o))
+TOOL_BINS := ${TOOL_OBJS:.o=.bin}
+
 #######################
 # Get all source files
 #######################
@@ -77,6 +83,12 @@ endif
 all:
 	@echo "SYSTEMC_ROOT enviornment: $(SYSTEMC_ROOT)"
 	make $(PROJECT)
+	make tools
+
+tools: $(TOOL_BINS)
+
+$(TOOL_BINS): %.bin : %.o
+	$(CXX) $(LIBDIR) -o $@ $< $(LDFLAGS)
 
 $(PROJECT): $(OBJS)
 	$(CXX) $(LIBDIR) -o $@ $^ $(LDFLAGS)

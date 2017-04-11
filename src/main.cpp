@@ -7,6 +7,7 @@
 #include "header/cmd_parser.hpp"
 #include "header/caffe/net.hpp"
 #include "header/systemc/top.hpp"
+#include "header/verilog/verilog_compiler.hpp"
 #include "proto/config.pb.h"
 #include <iostream>
 #include <systemc.h>
@@ -24,6 +25,11 @@ int sc_main (int argc, char **argv) {
   // parse the network architecture prototxt file
   Net caffe_net(cmd_parser.model_filename);
 
+  // Verilog Compiler of the parsed caffenet
+  VerilogCompiler verilog_compiler(caffe_net, cmd_parser.config_param);
+  verilog_compiler.GenerateProj("./project");
+
+/* TODO
   // create trace file
   sc_trace_file* tf = NULL;
   sc_set_time_resolution(100, SC_PS);
@@ -89,6 +95,7 @@ int sc_main (int argc, char **argv) {
   if (tf) {
     sc_close_vcd_trace_file(tf);
   }
+  */
 
   return 0;
 }
