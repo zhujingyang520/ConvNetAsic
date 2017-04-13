@@ -1,4 +1,4 @@
-name: "Inception v4 Inception-B"
+name: "Inception v4 Inception B"
 layer {
   name: "reduction_a_concat"
   type: "Input"

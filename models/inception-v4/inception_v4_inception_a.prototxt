@@ -1,4 +1,4 @@
-name: "Inception v4 Inception-A"
+name: "Inception v4 Inception A"
 layer {
   name: "inception_stem3"
   type: "Input"

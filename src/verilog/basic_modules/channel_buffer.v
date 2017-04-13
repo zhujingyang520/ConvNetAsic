@@ -67,7 +67,7 @@ end else begin: genblk1
   // RX path
   // -------------------------
   // previous layer ready: if the fifo is full, deassert the ready
-  assign prev_layer_rdy   = (fifo_full == 1'b0);
+  assign prev_layer_rdy   = (fifo_full == 1'b0) && (rst == 1'b0);
   // FIFO write path
   always @ (*) begin
     if (!fifo_full && prev_layer_valid && !fifo_bypass) begin

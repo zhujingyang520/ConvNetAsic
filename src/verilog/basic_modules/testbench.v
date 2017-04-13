@@ -52,7 +52,7 @@ always @ (posedge clk or posedge rst) begin
     input_layer_valid <= 1'b1;
 
     // if the input data is ready, increments the data to send
-    if (input_layer_rdy) begin
+    if (input_layer_rdy && input_layer_valid) begin
       $display("@%0t[ns] testbench sends: %0d", $time, data_tx);
       data_tx         <= data_tx + 1;
       $fdisplay(fp, "%t", $time);
